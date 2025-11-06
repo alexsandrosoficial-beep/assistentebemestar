@@ -14,21 +14,30 @@ serve(async (req) => {
     // Validar autenticação
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
+      console.error("Authorization header ausente");
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Criar cliente Supabase com o token do usuário
-    const supabaseClient = createClient(
+    // Extrair o token JWT
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Criar cliente Supabase com service role para validação
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
-    // Verificar usuário autenticado
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Verificar usuário com o JWT token
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
       console.error("Erro de autenticação:", authError);
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
@@ -37,8 +46,10 @@ serve(async (req) => {
       });
     }
 
+    console.log("Usuário autenticado:", user.id);
+
     // Verificar assinatura ativa
-    const { data: subscription, error: subError } = await supabaseClient
+    const { data: subscription, error: subError } = await supabaseAdmin
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
