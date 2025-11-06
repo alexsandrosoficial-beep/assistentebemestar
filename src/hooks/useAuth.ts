@@ -144,7 +144,7 @@ export const useAuth = () => {
           .select('*')
           .eq('user_id', data.user.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         toast({
           title: "Login realizado!",
@@ -197,7 +197,7 @@ export const useAuth = () => {
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     // Check if subscription has expired
     if (data && data.expires_at) {
