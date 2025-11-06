@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Menu, Moon, Sun } from "lucide-react";
+import { Menu, Moon, Sun, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sheet,
   SheetContent,
@@ -10,6 +11,7 @@ import {
 
 export const Navbar = () => {
   const [isDark, setIsDark] = useState(false);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -59,9 +61,20 @@ export const Navbar = () => {
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          <Link to="/auth" className="hidden md:block">
-            <Button variant="gradient">Entrar</Button>
-          </Link>
+          {!loading && (
+            user ? (
+              <Link to="/perfil" className="hidden md:block">
+                <Button variant="gradient">
+                  <User className="h-4 w-4 mr-2" />
+                  Perfil
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth" className="hidden md:block">
+                <Button variant="gradient">Entrar</Button>
+              </Link>
+            )
+          )}
 
           {/* Mobile Menu */}
           <Sheet>
@@ -81,9 +94,20 @@ export const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
-                <Link to="/auth">
-                  <Button variant="gradient" className="w-full">Entrar</Button>
-                </Link>
+                {!loading && (
+                  user ? (
+                    <Link to="/perfil">
+                      <Button variant="gradient" className="w-full">
+                        <User className="h-4 w-4 mr-2" />
+                        Perfil
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to="/auth">
+                      <Button variant="gradient" className="w-full">Entrar</Button>
+                    </Link>
+                  )
+                )}
               </div>
             </SheetContent>
           </Sheet>
