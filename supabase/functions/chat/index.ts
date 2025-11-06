@@ -1,5 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+
+// Schema de validação para mensagens
+const messageSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string().min(1, 'Conteúdo não pode estar vazio').max(5000, 'Conteúdo excede o limite de 5000 caracteres')
+  })).min(1, 'Pelo menos uma mensagem é necessária').max(50, 'Máximo de 50 mensagens permitidas')
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +55,7 @@ serve(async (req) => {
       });
     }
 
-    console.log("Usuário autenticado:", user.id);
+    console.log("Usuário autenticado");
 
     // Verificar assinatura ativa
     const { data: subscription, error: subError } = await supabaseAdmin
@@ -65,13 +74,14 @@ serve(async (req) => {
     }
 
     if (!subscription) {
-      console.error("Assinatura inválida para usuário:", user.id);
+      console.error("Assinatura inválida ou expirada");
       return new Response(JSON.stringify({ error: "Assinatura inválida ou expirada" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Validar e parsear corpo da requisição
     let body: any;
     try {
       body = await req.json();
@@ -83,18 +93,23 @@ serve(async (req) => {
       });
     }
 
-    const messages = Array.isArray(body?.messages) ? body.messages : [];
-    if (messages.length === 0) {
-      return new Response(JSON.stringify({ error: 'Mensagens ausentes' }), {
+    // Validar estrutura e conteúdo das mensagens com Zod
+    const validation = messageSchema.safeParse(body);
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message || 'Formato de mensagens inválido';
+      console.error('Validação falhou:', errorMessage);
+      return new Response(JSON.stringify({ error: errorMessage }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const messages = validation.data.messages;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
-    console.log("Chat iniciado - Usuário:", user.id, "- Mensagens:", messages.length);
+    console.log("Chat iniciado - Mensagens:", messages.length);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
