@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseTyped as supabase } from '@/integrations/supabase/client-typed';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -59,7 +59,7 @@ export const useAuth = () => {
             id: data.user.id,
             email: data.user.email!,
             name
-          });
+          } as any);
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
@@ -82,7 +82,7 @@ export const useAuth = () => {
             plan_type: 'free',
             status: 'active',
             expires_at: expiresAt.toISOString()
-          });
+          } as any);
 
         if (subscriptionError) {
           console.error('Error creating subscription:', subscriptionError);
@@ -200,16 +200,17 @@ export const useAuth = () => {
       .maybeSingle();
 
     // Check if subscription has expired
-    if (data && data.expires_at) {
-      const expiresAt = new Date(data.expires_at);
+    if (data && (data as any).expires_at) {
+      const expiresAt = new Date((data as any).expires_at);
       const now = new Date();
       
       if (now > expiresAt) {
         // Update subscription status to expired
         await supabase
           .from('user_subscriptions')
+          // @ts-ignore - Temporary fix until Supabase types are regenerated
           .update({ status: 'expired' })
-          .eq('id', data.id);
+          .eq('id', (data as any).id);
         
         return null;
       }

@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ReactMarkdown from 'react-markdown';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseTyped as supabase } from '@/integrations/supabase/client-typed';
 
 const Chat = () => {
   const [input, setInput] = useState('');
@@ -44,8 +44,8 @@ const Chat = () => {
         }
 
         // Calculate days remaining for free trial
-        if (subscription.plan_type === 'free' && subscription.expires_at) {
-          const expiresAt = new Date(subscription.expires_at);
+        if ((subscription as any).plan_type === 'free' && (subscription as any).expires_at) {
+          const expiresAt = new Date((subscription as any).expires_at);
           const now = new Date();
           const diffTime = expiresAt.getTime() - now.getTime();
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

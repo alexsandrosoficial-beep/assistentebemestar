@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTyped as supabase } from "@/integrations/supabase/client-typed";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,11 +42,12 @@ const Planos = () => {
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingSubscription) {
         const { error } = await supabase
           .from('user_subscriptions')
+          // @ts-ignore - Temporary fix until Supabase types are regenerated
           .update({
             plan_type: planType,
             status: 'active',
@@ -56,13 +57,13 @@ const Planos = () => {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('user_subscriptions')
+        const { error } = await ((supabase
+          .from('user_subscriptions') as any)
           .insert({
             user_id: user.id,
             plan_type: planType,
             status: 'active'
-          });
+          }));
 
         if (error) throw error;
       }
