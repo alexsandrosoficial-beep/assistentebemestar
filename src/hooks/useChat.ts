@@ -19,6 +19,25 @@ export const useChat = () => {
     setIsLoading(true);
 
     let assistantMessage = '';
+    
+    // Salvar mensagem do usuário no banco de dados
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: topicData } = await supabase.rpc('identify_topic', { 
+          message_content: userMessage 
+        });
+        
+        await supabase.from('chat_messages').insert({
+          user_id: user.id,
+          role: 'user',
+          content: userMessage,
+          topic: topicData || 'Outros'
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao salvar mensagem do usuário:', error);
+    }
 
     try {
       // Obter token de autenticação
@@ -127,6 +146,23 @@ export const useChat = () => {
       // Processar buffer final
       if (buffer.trim()) {
         processChunk();
+      }
+
+      // Salvar resposta do assistente no banco de dados
+      if (assistantMessage) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('chat_messages').insert({
+              user_id: user.id,
+              role: 'assistant',
+              content: assistantMessage,
+              topic: null // Não categorizar respostas do assistente
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao salvar mensagem do assistente:', error);
+        }
       }
 
     } catch (error) {

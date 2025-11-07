@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { UsageStatistics } from "@/components/UsageStatistics";
 import { 
   User, 
   Calendar, 
@@ -314,6 +315,9 @@ const Perfil = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Estatísticas de Uso */}
+            {user && <UsageStatistics userId={user.id} />}
 
             {/* Ações da Conta */}
             <Card>

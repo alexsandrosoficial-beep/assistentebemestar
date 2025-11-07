@@ -18,6 +18,15 @@ export interface UserSubscription {
   updated_at: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  user_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  topic: string | null;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -55,12 +64,30 @@ export interface Database {
           updated_at?: string;
         };
       };
+      chat_messages: {
+        Row: ChatMessage;
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: 'user' | 'assistant';
+          content: string;
+          topic?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          content?: string;
+          topic?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      identify_topic: {
+        Args: { message_content: string };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
