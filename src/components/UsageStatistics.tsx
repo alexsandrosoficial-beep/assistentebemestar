@@ -1,26 +1,15 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import { MessageSquare, TrendingUp, Calendar } from "lucide-react";
 
 interface UsageStats {
   totalMessages: number;
   userMessages: number;
-  topTopics: { topic: string; count: number }[];
   dailyActivity: { date: string; count: number }[];
-  weeklyActivity: { week: string; count: number }[];
+  weeklyTotal: number;
+  monthlyTotal: number;
 }
-
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--secondary))',
-  'hsl(var(--accent))',
-  'hsl(var(--muted))',
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-];
 
 export const UsageStatistics = ({ userId }: { userId: string }) => {
   const [stats, setStats] = useState<UsageStats | null>(null);
@@ -44,26 +33,6 @@ export const UsageStatistics = ({ userId }: { userId: string }) => {
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("role", "user");
-
-      // Tópicos mais consultados
-      const { data: topicsData } = await supabase
-        .from("chat_messages")
-        .select("topic")
-        .eq("user_id", userId)
-        .eq("role", "user")
-        .not("topic", "is", null);
-
-      const topicCounts: Record<string, number> = {};
-      topicsData?.forEach((item) => {
-        if (item.topic) {
-          topicCounts[item.topic] = (topicCounts[item.topic] || 0) + 1;
-        }
-      });
-
-      const topTopics = Object.entries(topicCounts)
-        .map(([topic, count]) => ({ topic, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6);
 
       // Atividade diária (últimos 7 dias)
       const { data: dailyData } = await supabase
@@ -90,32 +59,28 @@ export const UsageStatistics = ({ userId }: { userId: string }) => {
           return new Date(2024, monthA - 1, dayA).getTime() - new Date(2024, monthB - 1, dayB).getTime();
         });
 
-      // Atividade semanal (últimas 4 semanas)
-      const { data: weeklyData } = await supabase
+      // Atividade semanal
+      const { count: weeklyCount } = await supabase
         .from("chat_messages")
-        .select("created_at")
+        .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("role", "user")
-        .gte("created_at", new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString());
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      const weeklyCounts: Record<string, number> = {};
-      weeklyData?.forEach((item) => {
-        const date = new Date(item.created_at);
-        const weekNumber = Math.ceil((date.getDate() - date.getDay() + 1) / 7);
-        const month = date.toLocaleDateString("pt-BR", { month: "short" });
-        const weekKey = `Sem ${weekNumber} - ${month}`;
-        weeklyCounts[weekKey] = (weeklyCounts[weekKey] || 0) + 1;
-      });
-
-      const weeklyActivity = Object.entries(weeklyCounts)
-        .map(([week, count]) => ({ week, count }));
+      // Atividade mensal
+      const { count: monthlyCount } = await supabase
+        .from("chat_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("role", "user")
+        .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       setStats({
         totalMessages: totalCount || 0,
         userMessages: userCount || 0,
-        topTopics,
         dailyActivity,
-        weeklyActivity,
+        weeklyTotal: weeklyCount || 0,
+        monthlyTotal: monthlyCount || 0,
       });
     } catch (error) {
       console.error("Erro ao carregar estatísticas:", error);
@@ -168,11 +133,11 @@ export const UsageStatistics = ({ userId }: { userId: string }) => {
             Estatísticas de Uso
           </CardTitle>
           <CardDescription>
-            Acompanhe sua atividade e tópicos mais consultados
+            Acompanhe sua atividade no assistente de saúde
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-muted/50 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
@@ -187,131 +152,74 @@ export const UsageStatistics = ({ userId }: { userId: string }) => {
               </div>
               <p className="text-3xl font-bold">{stats.userMessages}</p>
             </div>
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <p className="text-sm text-muted-foreground">Tópicos Explorados</p>
-              </div>
-              <p className="text-3xl font-bold">{stats.topTopics.length}</p>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tópicos Mais Consultados */}
-      {stats.topTopics.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Tópicos Mais Consultados</CardTitle>
-            <CardDescription>
-              Áreas de saúde que você mais busca informações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.topTopics}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="topic" 
-                      stroke="hsl(var(--muted-foreground))"
-                      tick={{ fill: 'hsl(var(--foreground))' }}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))"
-                      tick={{ fill: 'hsl(var(--foreground))' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        color: 'hsl(var(--popover-foreground))'
-                      }}
-                    />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+      {/* Relatório de Atividade */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatório de Atividade</CardTitle>
+          <CardDescription>
+            Resumo das suas consultas recentes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Resumo por Período */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border border-border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Última Semana</h3>
+                  </div>
+                  <span className="text-2xl font-bold text-primary">{stats.weeklyTotal}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Perguntas nos últimos 7 dias
+                </p>
               </div>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats.topTopics}
-                      dataKey="count"
-                      nameKey="topic"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={(entry) => entry.topic}
-                    >
-                      {stats.topTopics.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        color: 'hsl(var(--popover-foreground))'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              
+              <div className="border border-border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Último Mês</h3>
+                  </div>
+                  <span className="text-2xl font-bold text-primary">{stats.monthlyTotal}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Perguntas nos últimos 30 dias
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Atividade Diária */}
-      {stats.dailyActivity.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Atividade dos Últimos 7 Dias</CardTitle>
-            <CardDescription>
-              Número de mensagens enviadas por dia
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.dailyActivity}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--popover-foreground))'
-                    }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    name="Mensagens"
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            {/* Atividade Diária Simplificada */}
+            {stats.dailyActivity.length > 0 && (
+              <div className="border border-border rounded-lg p-4">
+                <h3 className="font-semibold mb-4">Atividade Diária (Últimos 7 dias)</h3>
+                <div className="space-y-2">
+                  {stats.dailyActivity.map((day, index) => (
+                    <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <span className="text-sm font-medium">{day.date}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 max-w-[200px] bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-primary rounded-full h-2 transition-all"
+                            style={{ width: `${Math.min((day.count / Math.max(...stats.dailyActivity.map(d => d.count))) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-bold min-w-[30px] text-right">{day.count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
