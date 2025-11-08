@@ -43,7 +43,7 @@ const Home = () => {
     },
     {
       icon: Heart,
-      title: "Suporte 24/7",
+      title: "Suporte ao Cliente",
       description: "Disponível sempre que você precisar, a qualquer hora"
     }
   ];

@@ -98,33 +98,32 @@ const Planos = () => {
       highlighted: false
     },
     {
-      name: "Premium",
-      price: "R$ 29,90",
+      name: "VIP",
+      price: "R$ 9,90",
       period: "/mês",
       description: "Para uso individual completo",
       features: [
         "Conversas ilimitadas",
-        "Rotinas personalizadas",
+        "Dicas otimizadas",
         "Lembretes inteligentes",
         "Histórico completo",
-        "Suporte prioritário"
+        "Suporte"
       ],
-      cta: "Assinar Premium",
+      cta: "Assinar VIP",
       highlighted: true
     },
     {
-      name: "Família",
-      price: "R$ 49,90",
+      name: "Premium",
+      price: "R$ 29,90",
       period: "/mês",
       description: "Perfeito para toda a família",
       features: [
-        "Tudo do plano Premium",
-        "Até 5 pessoas",
-        "Dashboard familiar",
-        "Rotinas por pessoa",
-        "Suporte Premium"
+        "Tudo do plano VIP",
+        "Suporte Premium",
+        "Respostas otimizadas",
+        "Central de metas e objetivos personalizado"
       ],
-      cta: "Assinar Família",
+      cta: "Assinar Premium",
       highlighted: false
     }
   ];
@@ -194,7 +193,7 @@ const Planos = () => {
                       size="lg"
                       onClick={() => handleSelectPlan(
                         plan.name === 'Gratuito' ? 'free' : 
-                        plan.name === 'Premium' ? 'premium' : 'family'
+                        plan.name === 'VIP' ? 'premium' : 'premium'
                       )}
                     >
                       {plan.cta}
@@ -285,9 +284,9 @@ const Planos = () => {
             </DialogTitle>
             <DialogDescription className="space-y-4 pt-4">
               <div className="text-center space-y-3">
-                <p className="text-base font-medium text-foreground">
+                  <p className="text-base font-medium text-foreground">
                   Plano selecionado: <span className="text-primary font-bold">
-                    {selectedPlan === 'premium' ? 'Premium - R$ 29,90/mês' : 'Família - R$ 49,90/mês'}
+                    {selectedPlan === 'premium' ? 'Premium - R$ 29,90/mês' : 'VIP - R$ 9,90/mês'}
                   </span>
                 </p>
                 
@@ -317,7 +316,7 @@ const Planos = () => {
                 <Button 
                   className="w-full mt-4" 
                   onClick={() => {
-                    window.open(`https://wa.me/5535997168761?text=Olá! Gostaria de assinar o plano ${selectedPlan === 'premium' ? 'Premium' : 'Família'}.`, '_blank');
+                    window.open(`https://wa.me/5535997168761?text=Olá! Gostaria de assinar o plano ${selectedPlan === 'premium' ? 'Premium' : 'VIP'}.`, '_blank');
                   }}
                 >
                   Enviar mensagem no WhatsApp
