@@ -103,10 +103,12 @@ const Planos = () => {
       period: "/mês",
       description: "Para uso individual completo",
       features: [
-        "Conversas ilimitadas",
-        "Dicas otimizadas",
-        "Lembretes inteligentes",
-        "Histórico completo",
+        "Respostas básicas ilimitadas",
+        "Dicas gerais de saúde e bem-estar",
+        "Conteúdos de saúde e bem estar",
+        "Lembretes simples",
+        "Monitoramento básico",
+        "Sugestões simples de treino e alimentação",
         "Suporte"
       ],
       cta: "Assinar VIP",
@@ -118,10 +120,14 @@ const Planos = () => {
       period: "/mês",
       description: "Perfeito para toda a família",
       features: [
-        "Tudo do plano VIP",
-        "Suporte Premium",
-        "Respostas otimizadas",
-        "Central de metas e objetivos personalizado"
+        "Respostas avançadas ilimitadas",
+        "Recomendações personalizadas",
+        "Planos de treino e alimentação completos",
+        "Análise profunda de hábitos e saúde",
+        "Relatórios e acompanhamento evolutivo",
+        "Chat prioritário",
+        "Conteúdos e recursos",
+        "Suporte Premium"
       ],
       cta: "Assinar Premium",
       highlighted: false
