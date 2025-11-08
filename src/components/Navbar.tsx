@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Menu, Moon, Sun, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Sheet,
   SheetContent,
@@ -12,6 +13,7 @@ import {
 export const Navbar = () => {
   const [isDark, setIsDark] = useState(false);
   const { user, loading } = useAuth();
+  const { isPremium } = useSubscription();
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -23,12 +25,16 @@ export const Navbar = () => {
     setIsDark(!isDark);
   };
 
-  const navLinks = [
+  const baseNavLinks = [
     { to: "/", label: "Início" },
     { to: "/planos", label: "Planos" },
     { to: "/chat", label: "Chat IA" },
     { to: "/contato", label: "Contato" },
   ];
+
+  const navLinks = isPremium 
+    ? [...baseNavLinks.slice(0, 3), { to: "/metas", label: "Metas" }, ...baseNavLinks.slice(3)]
+    : baseNavLinks;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
