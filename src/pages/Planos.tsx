@@ -103,12 +103,8 @@ const Planos = () => {
       period: "/mês",
       description: "Para uso individual completo",
       features: [
-        "Respostas básicas ilimitadas",
-        "Dicas gerais de saúde e bem-estar",
-        "Conteúdos de saúde e bem estar",
-        "Lembretes simples",
-        "Monitoramento básico",
-        "Sugestões simples de treino e alimentação",
+        "Perguntas ilimitadas sobre saúde e bem estar",
+        "Respostas e recomendações básicas",
         "Suporte"
       ],
       cta: "Assinar VIP",
@@ -118,15 +114,11 @@ const Planos = () => {
       name: "Premium",
       price: "R$ 29,90",
       period: "/mês",
-      description: "Perfeito para toda a família",
+      description: "Acesso completo e avançado",
       features: [
+        "Perguntas ilimitadas",
         "Respostas avançadas ilimitadas",
-        "Recomendações personalizadas",
-        "Planos de treino e alimentação completos",
-        "Análise profunda de hábitos e saúde",
-        "Relatórios e acompanhamento evolutivo",
-        "Chat prioritário",
-        "Conteúdos e recursos",
+        "Recomendações avançadas e personalizadas",
         "Suporte Premium"
       ],
       cta: "Assinar Premium",
