@@ -13,9 +13,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Target, TrendingUp, Calendar, Crown } from "lucide-react";
+import { Plus, Target, TrendingUp, Calendar, Crown, Sparkles, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Goal {
   id: string;
@@ -32,6 +33,16 @@ interface Goal {
   reminder_frequency: string;
 }
 
+interface GoalRecommendation {
+  title: string;
+  description: string;
+  category: string;
+  target_value: number;
+  unit: string;
+  duration_days: number;
+  reminder_frequency: string;
+}
+
 const Metas = () => {
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription();
@@ -40,6 +51,10 @@ const Metas = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
+  const [recommendationsOpen, setRecommendationsOpen] = useState(false);
+  const [generatingRecommendations, setGeneratingRecommendations] = useState(false);
+  const [recommendations, setRecommendations] = useState<GoalRecommendation[]>([]);
 
   const [newGoal, setNewGoal] = useState({
     title: "",
@@ -50,6 +65,17 @@ const Metas = () => {
     target_date: "",
     reminder_enabled: false,
     reminder_frequency: "daily"
+  });
+
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState({
+    objective: "",
+    currentActivity: "",
+    sleepHours: "",
+    waterIntake: "",
+    dietQuality: "",
+    stressLevel: "",
+    healthConcerns: "",
+    availableTime: ""
   });
 
   useEffect(() => {
@@ -177,6 +203,83 @@ const Metas = () => {
     }
   };
 
+  const handleGenerateRecommendations = async () => {
+    const hasEmptyAnswers = Object.values(questionnaireAnswers).some(answer => !answer);
+    if (hasEmptyAnswers) {
+      toast({
+        title: "Questionário incompleto",
+        description: "Por favor, responda todas as perguntas.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGeneratingRecommendations(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-goal-recommendations', {
+        body: { answers: questionnaireAnswers }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setRecommendations(data.recommendations);
+      setQuestionnaireOpen(false);
+      setRecommendationsOpen(true);
+      
+      toast({
+        title: "Recomendações geradas!",
+        description: "Confira as metas sugeridas pela IA.",
+      });
+    } catch (error: any) {
+      console.error('Error generating recommendations:', error);
+      toast({
+        title: "Erro ao gerar recomendações",
+        description: error.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingRecommendations(false);
+    }
+  };
+
+  const handleAddRecommendation = async (recommendation: GoalRecommendation) => {
+    try {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + recommendation.duration_days);
+
+      const { error } = await supabase.from('user_goals').insert({
+        user_id: user?.id,
+        title: recommendation.title,
+        description: recommendation.description,
+        category: recommendation.category,
+        target_value: recommendation.target_value,
+        unit: recommendation.unit,
+        target_date: targetDate.toISOString().split('T')[0],
+        reminder_enabled: true,
+        reminder_frequency: recommendation.reminder_frequency,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Meta adicionada!",
+        description: "A meta recomendada foi adicionada às suas metas.",
+      });
+
+      fetchGoals();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao adicionar meta",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (authLoading || subLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -217,13 +320,23 @@ const Metas = () => {
                 </p>
               </div>
               
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
-                    <Plus className="h-5 w-5" />
-                    Nova Meta
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-3">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setQuestionnaireOpen(true)}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Recomendações IA
+                </Button>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="gap-2">
+                      <Plus className="h-5 w-5" />
+                      Nova Meta
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Criar Nova Meta</DialogTitle>
@@ -342,9 +455,261 @@ const Metas = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </div>
         </section>
+
+        {/* Questionnaire Dialog */}
+        <Dialog open={questionnaireOpen} onOpenChange={setQuestionnaireOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Questionário de Saúde e Rotina
+              </DialogTitle>
+              <DialogDescription>
+                Responda as perguntas abaixo para receber recomendações personalizadas de metas
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                <Label>Qual é seu principal objetivo?</Label>
+                <RadioGroup value={questionnaireAnswers.objective} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, objective: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="perder_peso" id="obj1" />
+                    <Label htmlFor="obj1" className="font-normal cursor-pointer">Perder peso</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ganhar_massa" id="obj2" />
+                    <Label htmlFor="obj2" className="font-normal cursor-pointer">Ganhar massa muscular</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="melhorar_saude" id="obj3" />
+                    <Label htmlFor="obj3" className="font-normal cursor-pointer">Melhorar saúde geral</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mais_energia" id="obj4" />
+                    <Label htmlFor="obj4" className="font-normal cursor-pointer">Ter mais energia</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Qual seu nível atual de atividade física?</Label>
+                <RadioGroup value={questionnaireAnswers.currentActivity} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, currentActivity: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="sedentario" id="act1" />
+                    <Label htmlFor="act1" className="font-normal cursor-pointer">Sedentário (pouco ou nenhum exercício)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="leve" id="act2" />
+                    <Label htmlFor="act2" className="font-normal cursor-pointer">Leve (1-2 dias/semana)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="moderado" id="act3" />
+                    <Label htmlFor="act3" className="font-normal cursor-pointer">Moderado (3-5 dias/semana)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="intenso" id="act4" />
+                    <Label htmlFor="act4" className="font-normal cursor-pointer">Intenso (6-7 dias/semana)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Quantas horas você dorme por noite?</Label>
+                <RadioGroup value={questionnaireAnswers.sleepHours} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, sleepHours: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="menos_5" id="sleep1" />
+                    <Label htmlFor="sleep1" className="font-normal cursor-pointer">Menos de 5 horas</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="5_6" id="sleep2" />
+                    <Label htmlFor="sleep2" className="font-normal cursor-pointer">5-6 horas</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="7_8" id="sleep3" />
+                    <Label htmlFor="sleep3" className="font-normal cursor-pointer">7-8 horas</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mais_8" id="sleep4" />
+                    <Label htmlFor="sleep4" className="font-normal cursor-pointer">Mais de 8 horas</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Quantos copos de água você bebe por dia?</Label>
+                <RadioGroup value={questionnaireAnswers.waterIntake} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, waterIntake: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="menos_4" id="water1" />
+                    <Label htmlFor="water1" className="font-normal cursor-pointer">Menos de 4 copos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="4_6" id="water2" />
+                    <Label htmlFor="water2" className="font-normal cursor-pointer">4-6 copos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="7_8" id="water3" />
+                    <Label htmlFor="water3" className="font-normal cursor-pointer">7-8 copos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mais_8" id="water4" />
+                    <Label htmlFor="water4" className="font-normal cursor-pointer">Mais de 8 copos</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Como você avalia sua alimentação?</Label>
+                <RadioGroup value={questionnaireAnswers.dietQuality} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, dietQuality: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ruim" id="diet1" />
+                    <Label htmlFor="diet1" className="font-normal cursor-pointer">Ruim (muitos processados e fast food)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="regular" id="diet2" />
+                    <Label htmlFor="diet2" className="font-normal cursor-pointer">Regular (algumas refeições saudáveis)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="boa" id="diet3" />
+                    <Label htmlFor="diet3" className="font-normal cursor-pointer">Boa (maioria das refeições balanceadas)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="excelente" id="diet4" />
+                    <Label htmlFor="diet4" className="font-normal cursor-pointer">Excelente (sempre balanceada e nutritiva)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Qual seu nível de estresse diário?</Label>
+                <RadioGroup value={questionnaireAnswers.stressLevel} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, stressLevel: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="baixo" id="stress1" />
+                    <Label htmlFor="stress1" className="font-normal cursor-pointer">Baixo</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="moderado" id="stress2" />
+                    <Label htmlFor="stress2" className="font-normal cursor-pointer">Moderado</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="alto" id="stress3" />
+                    <Label htmlFor="stress3" className="font-normal cursor-pointer">Alto</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="muito_alto" id="stress4" />
+                    <Label htmlFor="stress4" className="font-normal cursor-pointer">Muito Alto</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="health_concerns">Tem alguma preocupação específica com a saúde?</Label>
+                <Textarea
+                  id="health_concerns"
+                  placeholder="Ex: pressão alta, diabetes, problemas nas articulações..."
+                  value={questionnaireAnswers.healthConcerns}
+                  onChange={(e) => setQuestionnaireAnswers({ ...questionnaireAnswers, healthConcerns: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label>Quanto tempo você tem disponível por dia para se dedicar às suas metas?</Label>
+                <RadioGroup value={questionnaireAnswers.availableTime} onValueChange={(value) => setQuestionnaireAnswers({ ...questionnaireAnswers, availableTime: value })}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="menos_15" id="time1" />
+                    <Label htmlFor="time1" className="font-normal cursor-pointer">Menos de 15 minutos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="15_30" id="time2" />
+                    <Label htmlFor="time2" className="font-normal cursor-pointer">15-30 minutos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="30_60" id="time3" />
+                    <Label htmlFor="time3" className="font-normal cursor-pointer">30-60 minutos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mais_60" id="time4" />
+                    <Label htmlFor="time4" className="font-normal cursor-pointer">Mais de 60 minutos</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setQuestionnaireOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={handleGenerateRecommendations} className="flex-1 gap-2" disabled={generatingRecommendations}>
+                {generatingRecommendations ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Recomendações
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Recommendations Dialog */}
+        <Dialog open={recommendationsOpen} onOpenChange={setRecommendationsOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Recomendações Personalizadas de Metas
+              </DialogTitle>
+              <DialogDescription>
+                Baseado nas suas respostas, a IA gerou estas recomendações para você
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {recommendations.map((rec, index) => (
+                <Card key={index} className="border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      <span>{rec.title}</span>
+                      <Button size="sm" onClick={() => handleAddRecommendation(rec)}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </CardTitle>
+                    <CardDescription>
+                      {rec.category.charAt(0).toUpperCase() + rec.category.slice(1)} • {rec.duration_days} dias
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                    <div className="flex gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Meta:</span>{' '}
+                        <span className="font-semibold">{rec.target_value} {rec.unit}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Lembretes:</span>{' '}
+                        <span className="font-semibold">
+                          {rec.reminder_frequency === 'daily' ? 'Diário' : 
+                           rec.reminder_frequency === 'weekly' ? 'Semanal' : 'Mensal'}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <Button variant="outline" onClick={() => setRecommendationsOpen(false)} className="w-full">
+              Fechar
+            </Button>
+          </DialogContent>
+        </Dialog>
 
         {/* Goals List */}
         <section className="py-12">
