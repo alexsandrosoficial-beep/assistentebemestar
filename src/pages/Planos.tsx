@@ -118,8 +118,9 @@ const Planos = () => {
       features: [
         "Perguntas ilimitadas",
         "Respostas ilimitadas",
-        "Recomendações personalizadas",
-        "Central de metas e objetivos personalizado",
+        "Recomendações personalizadas com IA",
+        "Central de metas e objetivos com assistente de saúde",
+        "Acompanhamento inteligente de progresso",
         "Suporte Premium"
       ],
       cta: "Assinar Premium",
