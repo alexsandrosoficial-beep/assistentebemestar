@@ -103,7 +103,7 @@ const Planos = () => {
       period: "/mês",
       description: "Para uso individual completo",
       features: [
-        "Perguntas ilimitadas sobre saúde e bem estar",
+        "Perguntas ilimitadas",
         "Respostas e recomendações básicas",
         "Suporte"
       ],
@@ -112,13 +112,13 @@ const Planos = () => {
     },
     {
       name: "Premium",
-      price: "R$ 29,90",
+      price: "R$ 19,90",
       period: "/mês",
       description: "Acesso completo e avançado",
       features: [
         "Perguntas ilimitadas",
-        "Respostas avançadas ilimitadas",
-        "Recomendações avançadas e personalizadas",
+        "Respostas ilimitadas",
+        "Recomendações personalizadas",
         "Central de metas e objetivos personalizado",
         "Suporte Premium"
       ],
@@ -285,7 +285,7 @@ const Planos = () => {
               <div className="text-center space-y-3">
                   <p className="text-base font-medium text-foreground">
                   Plano selecionado: <span className="text-primary font-bold">
-                    {selectedPlan === 'premium' ? 'Premium - R$ 29,90/mês' : 'VIP - R$ 9,90/mês'}
+                    {selectedPlan === 'premium' ? 'Premium - R$ 19,90/mês' : 'VIP - R$ 9,90/mês'}
                   </span>
                 </p>
                 
