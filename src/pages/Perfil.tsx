@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UsageStatistics } from "@/components/UsageStatistics";
 import { 
   User, 
   Calendar, 
@@ -16,7 +15,12 @@ import {
   Trash2,
   Clock,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Crown,
+  Sparkles,
+  TrendingUp,
+  Shield,
+  CheckCircle2
 } from "lucide-react";
 import {
   AlertDialog,
@@ -183,112 +187,156 @@ const Perfil = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-1 py-12 bg-muted/30">
-        <div className="container max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Meu Perfil</h1>
-            <p className="text-muted-foreground">
-              Gerencie suas informações e configurações
+      <main className="flex-1 py-12 bg-gradient-to-b from-background via-secondary/20 to-background">
+        <div className="container max-w-6xl">
+          {/* Header com Badge Premium */}
+          <div className="mb-12 text-center">
+            <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/30 animate-fade-in">
+              {subscription?.plan_type === 'premium' ? (
+                <>
+                  <Crown className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Membro Premium</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-muted-foreground">Membro {getPlanName(subscription?.plan_type || 'free')}</span>
+                </>
+              )}
+            </div>
+            <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Meu Perfil
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Gerencie suas informações e acompanhe sua jornada de saúde e bem-estar
             </p>
           </div>
 
-          <div className="space-y-6">
-            {/* Informações Pessoais */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Card de Informações Pessoais - Redesenhado */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 group hover:shadow-lg">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative z-10">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
                   Informações Pessoais
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Nome</p>
-                    <p className="font-medium">{profile?.name || "Não informado"}</p>
+              <CardContent className="space-y-6 relative z-10">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Nome</p>
+                      <p className="font-semibold text-lg">{profile?.name || "Não informado"}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{profile?.email}</p>
+
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <Mail className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Email</p>
+                      <p className="font-semibold">{profile?.email}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Tempo de uso</p>
-                    <p className="font-medium">{daysActive} dias</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Membro desde</p>
-                    <p className="font-medium">
-                      {profile?.created_at ? formatDate(profile.created_at) : "N/A"}
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border border-primary/20 text-center">
+                      <Clock className="h-6 w-6 text-primary mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">Tempo de uso</p>
+                      <p className="text-2xl font-bold text-primary">{daysActive}</p>
+                      <p className="text-xs text-muted-foreground">dias</p>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border border-primary/20 text-center">
+                      <Calendar className="h-6 w-6 text-primary mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">Membro desde</p>
+                      <p className="text-sm font-bold">
+                        {profile?.created_at ? formatDate(profile.created_at) : "N/A"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Informações do Plano */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
+            {/* Card do Plano Atual - Redesenhado */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 group hover:shadow-lg">
+              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative z-10">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <CreditCard className="h-6 w-6 text-primary" />
+                  </div>
                   Plano Atual
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 relative z-10">
                 {subscription ? (
                   <>
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Plano</p>
-                        <p className="font-medium text-lg">
+                    <div className="relative">
+                      <div className={`p-6 rounded-xl border-2 text-center ${
+                        subscription.plan_type === 'premium' 
+                          ? 'bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/50' 
+                          : 'bg-gradient-to-br from-muted/50 to-background border-border'
+                      }`}>
+                        {subscription.plan_type === 'premium' && (
+                          <Sparkles className="h-8 w-8 text-primary mx-auto mb-3 animate-pulse" />
+                        )}
+                        <p className="text-sm text-muted-foreground mb-2">Seu Plano</p>
+                        <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                           {getPlanName(subscription.plan_type)}
                         </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-medium">
-                          {getStatusName(subscription.status)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Início</p>
-                        <p className="font-medium">
-                          {formatDate(subscription.started_at)}
-                        </p>
-                      </div>
-                    </div>
-                    {subscription.expires_at && (
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Validade</p>
-                          <p className="font-medium">
-                            {formatDate(subscription.expires_at)}
-                          </p>
+                        <div className="flex items-center justify-center gap-2 mt-3">
+                          {subscription.status === 'active' ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-500">Ativo</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-4 w-4 text-amber-500" />
+                              <span className="text-sm font-medium text-amber-500">{getStatusName(subscription.status)}</span>
+                            </>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Início</span>
+                        </div>
+                        <span className="font-semibold text-sm">
+                          {formatDate(subscription.started_at)}
+                        </span>
+                      </div>
+
+                      {subscription.expires_at && (
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Validade</span>
+                          </div>
+                          <span className="font-semibold text-sm">
+                            {formatDate(subscription.expires_at)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     
                     {subscription.status === "active" && subscription.plan_type !== "free" && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" className="w-full mt-4">
+                          <Button variant="outline" className="w-full">
                             Cancelar Plano
                           </Button>
                         </AlertDialogTrigger>
@@ -311,61 +359,84 @@ const Perfil = () => {
                     )}
                   </>
                 ) : (
-                  <p className="text-muted-foreground">Nenhum plano ativo</p>
+                  <div className="text-center py-8">
+                    <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-muted-foreground mb-4">Nenhum plano ativo</p>
+                    <Button onClick={() => navigate('/planos')} className="gap-2">
+                      <Crown className="h-4 w-4" />
+                      Ver Planos
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Estatísticas de Uso */}
-            {user && <UsageStatistics userId={user.id} />}
-
-            {/* Ações da Conta */}
-            <Card>
+            {/* Card de Ações da Conta - Redesenhado (Ocupa toda largura) */}
+            <Card className="md:col-span-2 relative overflow-hidden border-2 hover:border-primary/30 transition-all">
               <CardHeader>
-                <CardTitle>Gerenciar Conta</CardTitle>
-                <CardDescription>
-                  Configurações e ações da sua conta
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Shield className="h-6 w-6 text-primary" />
+                  </div>
+                  Gerenciar Conta
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Configurações e ações importantes da sua conta
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={signOut}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair da Conta
-                </Button>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full justify-start gap-3 h-auto py-4 hover:bg-muted/50 transition-colors group"
+                    onClick={signOut}
+                  >
+                    <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                      <LogOut className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold">Sair da Conta</p>
+                      <p className="text-xs text-muted-foreground">Fazer logout da aplicação</p>
+                    </div>
+                  </Button>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      className="w-full justify-start"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Deletar Conta
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Deletar conta permanentemente?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Todos os seus dados serão
-                        permanentemente removidos de nossos servidores.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteAccount}
-                        className="bg-destructive hover:bg-destructive/90"
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full justify-start gap-3 h-auto py-4 hover:bg-destructive/10 transition-colors group border-destructive/50"
                       >
-                        Sim, deletar conta
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <div className="p-2 bg-destructive/10 rounded-lg group-hover:bg-destructive/20 transition-colors">
+                          <Trash2 className="h-5 w-5 text-destructive" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-destructive">Deletar Conta</p>
+                          <p className="text-xs text-muted-foreground">Remover permanentemente</p>
+                        </div>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Deletar conta permanentemente?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. Todos os seus dados serão
+                          permanentemente removidos de nossos servidores.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteAccount}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Sim, deletar conta
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
           </div>
