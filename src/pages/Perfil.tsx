@@ -20,7 +20,10 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
-  CheckCircle2
+  CheckCircle2,
+  Edit2,
+  Check,
+  X
 } from "lucide-react";
 import {
   AlertDialog,
@@ -33,6 +36,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
+});
 
 const Perfil = () => {
   const navigate = useNavigate();
@@ -41,6 +50,9 @@ const Perfil = () => {
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [daysActive, setDaysActive] = useState(0);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -66,6 +78,7 @@ const Perfil = () => {
       
       if (data) {
         setProfile(data);
+        setEditedName(data.name || "");
         
         // Calcular dias desde o cadastro
         const createdDate = new Date(data.created_at);
@@ -90,6 +103,56 @@ const Perfil = () => {
       setSubscription(sub);
     } catch (error: any) {
       console.error("Erro ao carregar assinatura:", error);
+    }
+  };
+
+  const handleStartEditName = () => {
+    setIsEditingName(true);
+    setEditedName(profile?.name || "");
+  };
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false);
+    setEditedName(profile?.name || "");
+  };
+
+  const handleSaveName = async () => {
+    try {
+      // Validar input
+      const validated = profileSchema.parse({ name: editedName });
+      
+      setIsSaving(true);
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name: validated.name, updated_at: new Date().toISOString() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, name: validated.name });
+      setIsEditingName(false);
+      
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível atualizar suas informações",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -226,13 +289,58 @@ const Perfil = () => {
               </CardHeader>
               <CardContent className="space-y-6 relative z-10">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors group">
                     <div className="p-2 bg-primary/10 rounded-lg mt-1">
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Nome</p>
-                      <p className="font-semibold text-lg">{profile?.name || "Não informado"}</p>
+                      {isEditingName ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            className="h-9"
+                            placeholder="Digite seu nome"
+                            maxLength={100}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveName();
+                              if (e.key === 'Escape') handleCancelEditName();
+                            }}
+                            autoFocus
+                          />
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleSaveName}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <Check className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleCancelEditName}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-lg">{profile?.name || "Não informado"}</p>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleStartEditName}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 

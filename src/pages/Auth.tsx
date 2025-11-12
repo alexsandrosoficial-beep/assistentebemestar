@@ -68,7 +68,7 @@ const Auth = () => {
     if (!result.success) {
       toast({
         title: "Erro de validação",
-        description: result.error.errors[0].message,
+        description: result.error.issues[0].message,
         variant: "destructive",
       });
       return;
@@ -84,7 +84,7 @@ const Auth = () => {
     if (!result.success) {
       toast({
         title: "Erro de validação",
-        description: result.error.errors[0].message,
+        description: result.error.issues[0].message,
         variant: "destructive",
       });
       return;
