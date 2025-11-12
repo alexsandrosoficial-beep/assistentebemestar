@@ -2,7 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Target, Sparkles, TrendingUp, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabaseTyped as supabase } from "@/integrations/supabase/client-typed";
@@ -145,8 +145,56 @@ const Planos = () => {
           </div>
         </section>
 
-        {/* Plans */}
+        {/* Premium Feature Highlight */}
         <section className="py-16 -mt-10">
+          <div className="container max-w-6xl mx-auto mb-16">
+            <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <CardHeader className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-semibold text-primary uppercase tracking-wider">Exclusivo Premium</span>
+                </div>
+                <CardTitle className="text-3xl md:text-4xl">Central de Metas e Objetivos Personalizados</CardTitle>
+                <CardDescription className="text-lg">
+                  Transforme suas intenções em resultados concretos com nossa ferramenta inteligente de gestão de metas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Target className="h-5 w-5" />
+                      <h3 className="font-semibold">Metas Personalizadas</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Crie e acompanhe metas específicas de saúde, exercícios, alimentação e bem-estar adaptadas ao seu estilo de vida
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Sparkles className="h-5 w-5" />
+                      <h3 className="font-semibold">Recomendações por IA</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Responda um questionário e receba sugestões de metas inteligentes baseadas na sua rotina e objetivos de saúde
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <TrendingUp className="h-5 w-5" />
+                      <h3 className="font-semibold">Acompanhamento Inteligente</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Visualize seu progresso, receba lembretes personalizados e obtenha insights do assistente de saúde para alcançar seus objetivos
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+        {/* Plans */}
           <div className="container">
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {plans.map((plan, index) => (
