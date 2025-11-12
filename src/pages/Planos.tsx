@@ -108,7 +108,7 @@ const Planos = () => {
         "Suporte"
       ],
       cta: "Assinar VIP",
-      highlighted: true
+      highlighted: false
     },
     {
       name: "Premium",
@@ -124,7 +124,7 @@ const Planos = () => {
         "Suporte Premium"
       ],
       cta: "Assinar Premium",
-      highlighted: false
+      highlighted: true
     }
   ];
 
