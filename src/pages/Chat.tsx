@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Sparkles, Lock, Clock } from 'lucide-react';
+import { Send, Trash2, Sparkles, Lock, Clock, Bot, User } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -123,23 +123,34 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background flex flex-col">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8 flex flex-col max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Assistente de Saúde</h1>
-            <p className="text-muted-foreground">
-              Converse sobre saúde, bem-estar e organize suas rotinas
-            </p>
+      <main className="flex-1 container mx-auto px-4 py-6 md:py-8 flex flex-col max-w-5xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 animate-fade-in">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background animate-pulse" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Assistente de Saúde IA
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Powered by AI • Sempre disponível
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
             {daysRemaining !== null && daysRemaining <= 7 && (
-              <div className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-accent/10 text-primary px-3 py-2 rounded-full border border-primary/20 shadow-sm animate-scale-in">
                 <Clock className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {daysRemaining} {daysRemaining === 1 ? 'dia restante' : 'dias restantes'}
+                <span className="text-xs font-semibold">
+                  {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'} restantes
                 </span>
               </div>
             )}
@@ -148,91 +159,118 @@ const Chat = () => {
                 onClick={clearChat}
                 variant="outline"
                 size="sm"
-                className="gap-2"
+                className="gap-2 hover:bg-destructive hover:text-destructive-foreground transition-all"
               >
-                <Trash2 className="w-4 h-4" />
-                Limpar
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Limpar</span>
               </Button>
             )}
           </div>
         </div>
 
-        <div className="flex-1 bg-card rounded-lg border shadow-sm flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        {/* Chat Container */}
+        <div className="flex-1 backdrop-blur-sm bg-card/50 rounded-2xl border shadow-xl flex flex-col overflow-hidden animate-fade-in-up">
+          <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollRef}>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-primary" />
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 md:p-8">
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center animate-scale-in">
+                    <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                  </div>
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary to-accent opacity-20 blur-xl animate-pulse" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-2 text-foreground">
-                  Olá! Como posso ajudar?
+                <h2 className="text-2xl md:text-3xl font-bold mb-3 text-foreground">
+                  Como posso ajudar você hoje?
                 </h2>
-                <p className="text-muted-foreground max-w-md">
-                  Faça perguntas sobre saúde, fitness, nutrição, bem-estar mental e muito mais.
+                <p className="text-muted-foreground max-w-md mb-8">
+                  Faça perguntas sobre saúde, fitness, nutrição, bem-estar mental e muito mais. Estou aqui para te ajudar!
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6 w-full max-w-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
                   {[
-                    'Como posso melhorar minha rotina de sono?',
-                    'Dicas para começar a meditar',
-                    'Alimentação saudável para o dia a dia',
-                    'Exercícios para iniciantes'
+                    { text: 'Como posso melhorar minha rotina de sono?', icon: '😴' },
+                    { text: 'Dicas para começar a meditar', icon: '🧘' },
+                    { text: 'Alimentação saudável para o dia a dia', icon: '🥗' },
+                    { text: 'Exercícios para iniciantes', icon: '💪' }
                   ].map((suggestion, i) => (
                     <button
                       key={i}
-                      onClick={() => setInput(suggestion)}
-                      className="p-3 text-sm text-left rounded-lg border bg-card hover:bg-accent transition-colors"
+                      onClick={() => setInput(suggestion.text)}
+                      className="group p-4 text-sm text-left rounded-xl border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all hover:shadow-md hover:scale-[1.02] animate-fade-in-up"
+                      style={{ animationDelay: `${i * 100}ms` }}
                     >
-                      {suggestion}
+                      <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">{suggestion.icon}</span>
+                      <span className="text-foreground font-medium">{suggestion.text}</span>
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex gap-3 items-start animate-fade-in ${
+                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                    }`}
                   >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-4 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      {message.role === 'assistant' ? (
-                        <div className="prose prose-sm max-w-none">
-                          <ReactMarkdown
-                            components={{
-                              h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-3 text-foreground" {...props} />,
-                              h2: ({node, ...props}) => <h2 className="text-xl font-semibold mb-2 mt-4 text-foreground" {...props} />,
-                              h3: ({node, ...props}) => <h3 className="text-lg font-medium mb-2 mt-3 text-foreground" {...props} />,
-                              p: ({node, ...props}) => <p className="mb-3 text-base leading-relaxed text-foreground" {...props} />,
-                              ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 text-foreground" {...props} />,
-                              ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 text-foreground" {...props} />,
-                              li: ({node, ...props}) => <li className="text-base leading-relaxed text-foreground" {...props} />,
-                              strong: ({node, ...props}) => <strong className="font-semibold text-primary" {...props} />,
-                              em: ({node, ...props}) => <em className="italic text-foreground" {...props} />,
-                              code: ({node, ...props}) => <code className="bg-background px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...props} />,
-                              blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary pl-4 italic my-3 text-muted-foreground" {...props} />,
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
+                    {/* Avatar */}
+                    <div className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shadow-md ${
+                      message.role === 'user'
+                        ? 'bg-gradient-to-br from-primary to-accent'
+                        : 'bg-gradient-to-br from-muted to-muted/50 border-2 border-primary/20'
+                    }`}>
+                      {message.role === 'user' ? (
+                        <User className="w-4 h-4 md:w-5 md:h-5 text-primary-foreground" />
                       ) : (
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {message.content}
-                        </p>
+                        <Bot className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                       )}
+                    </div>
+
+                    {/* Message Content */}
+                    <div className={`flex-1 max-w-[85%] md:max-w-[80%]`}>
+                      <div
+                        className={`rounded-2xl p-4 shadow-md ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
+                            : 'bg-gradient-to-br from-card to-muted/30 text-foreground border border-border/50'
+                        }`}
+                      >
+                        {message.role === 'assistant' ? (
+                          <div className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <ReactMarkdown
+                              components={{
+                                h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 text-foreground" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="text-lg font-semibold mb-2 mt-3 text-foreground" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="text-base font-medium mb-1 mt-2 text-foreground" {...props} />,
+                                p: ({node, ...props}) => <p className="mb-2 text-sm leading-relaxed text-foreground/90" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-foreground/90" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-foreground/90" {...props} />,
+                                li: ({node, ...props}) => <li className="text-sm leading-relaxed" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-semibold text-primary" {...props} />,
+                                em: ({node, ...props}) => <em className="italic" {...props} />,
+                                code: ({node, ...props}) => <code className="bg-primary/10 px-1.5 py-0.5 rounded text-xs font-mono text-primary" {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote className="border-l-3 border-primary pl-3 italic my-2 text-muted-foreground text-sm" {...props} />,
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                            {message.content}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
                 {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-lg p-4">
-                      <div className="flex gap-2">
+                  <div className="flex gap-3 items-start animate-fade-in">
+                    <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-muted to-muted/50 border-2 border-primary/20 flex items-center justify-center shadow-md">
+                      <Bot className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    </div>
+                    <div className="bg-gradient-to-br from-card to-muted/30 border border-border/50 rounded-2xl p-4 shadow-md">
+                      <div className="flex gap-1.5">
                         <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                         <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -244,27 +282,30 @@ const Chat = () => {
             )}
           </ScrollArea>
 
-          <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
-            <div className="flex gap-2">
+          {/* Input Form */}
+          <form onSubmit={handleSubmit} className="p-4 md:p-5 border-t bg-card/80 backdrop-blur-sm">
+            <div className="flex gap-2 md:gap-3">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Digite sua pergunta sobre saúde e bem-estar..."
-                className="resize-none min-h-[60px]"
+                placeholder="Digite sua mensagem aqui..."
+                className="resize-none min-h-[56px] md:min-h-[60px] rounded-xl border-2 focus:border-primary transition-colors"
                 disabled={isLoading}
               />
               <Button
                 type="submit"
                 size="icon"
                 disabled={!input.trim() || isLoading}
-                className="h-[60px] w-[60px]"
+                className="h-[56px] w-[56px] md:h-[60px] md:w-[60px] rounded-xl bg-gradient-to-br from-primary to-accent hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
               >
                 <Send className="w-5 h-5" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Pressione Enter para enviar, Shift + Enter para nova linha
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+              <span className="hidden sm:inline">💡 Pressione</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted rounded border">Enter</kbd>
+              <span className="hidden sm:inline">para enviar</span>
             </p>
           </form>
         </div>
