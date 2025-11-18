@@ -104,7 +104,7 @@ const Planos = () => {
       description: "Para uso individual completo",
       features: [
         "Perguntas ilimitadas",
-        "Respostas e recomendações básicas",
+        "Recomendações personalizadas",
         "Suporte"
       ],
       cta: "Assinar VIP",
