@@ -223,6 +223,16 @@ const Metas = () => {
       if (error) throw error;
 
       if (data.error) {
+        // Tratamento específico para rate limiting
+        if (data.error.includes("Limite de gerações")) {
+          toast({
+            title: "Limite temporário atingido",
+            description: "Você atingiu o limite de gerações de metas por hora. Tente novamente mais tarde.",
+            variant: "destructive",
+          });
+          setGeneratingRecommendations(false);
+          return;
+        }
         throw new Error(data.error);
       }
 
@@ -236,11 +246,21 @@ const Metas = () => {
       });
     } catch (error: any) {
       console.error('Error generating recommendations:', error);
-      toast({
-        title: "Erro ao gerar recomendações",
-        description: error.message || "Tente novamente mais tarde.",
-        variant: "destructive",
-      });
+      
+      // Tratamento específico para diferentes tipos de erro
+      if (error.message?.includes("429") || error.message?.includes("Rate limit")) {
+        toast({
+          title: "Limite temporário atingido",
+          description: "Você atingiu o limite de gerações de metas. Aguarde uma hora e tente novamente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao gerar recomendações",
+          description: error.message || "Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setGeneratingRecommendations(false);
     }
