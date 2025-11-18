@@ -116,9 +116,7 @@ const Planos = () => {
       period: "/mês",
       description: "Acesso completo e avançado",
       features: [
-        "Perguntas ilimitadas",
-        "Respostas ilimitadas",
-        "Recomendações personalizadas com IA",
+        "Respostas e recomendações personalizadas ilimitadas",
         "Central de metas e objetivos com assistente de saúde",
         "Acompanhamento inteligente de progresso",
         "Suporte Premium"
