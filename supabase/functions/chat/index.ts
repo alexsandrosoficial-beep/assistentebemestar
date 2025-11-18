@@ -81,6 +81,66 @@ serve(async (req) => {
       });
     }
 
+    // Rate limiting: verificar limites baseados no plano
+    const RATE_LIMITS: Record<string, number> = {
+      free: 10,
+      basic: 30,
+      premium: 100
+    };
+    
+    const maxRequests = RATE_LIMITS[subscription.plan_type] || 10;
+    const windowMinutes = 10;
+    const windowStart = new Date();
+    windowStart.setMinutes(windowStart.getMinutes() - windowMinutes);
+
+    // Verificar rate limit do usuário
+    const { data: rateLimitData, error: rateLimitError } = await supabaseAdmin
+      .from('chat_rate_limits')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('window_start', windowStart.toISOString())
+      .maybeSingle();
+
+    if (rateLimitError && rateLimitError.code !== 'PGRST116') {
+      console.error("Erro ao verificar rate limit:", rateLimitError);
+    }
+
+    if (rateLimitData) {
+      // Verificar se excedeu o limite
+      if (rateLimitData.request_count >= maxRequests) {
+        console.warn(`Rate limit excedido para usuário ${user.id}`);
+        return new Response(JSON.stringify({ 
+          error: "Limite de mensagens atingido. Tente novamente em alguns minutos.",
+          retryAfter: windowMinutes * 60
+        }), {
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": String(windowMinutes * 60)
+          },
+        });
+      }
+
+      // Incrementar contador
+      await supabaseAdmin
+        .from('chat_rate_limits')
+        .update({ 
+          request_count: rateLimitData.request_count + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rateLimitData.id);
+    } else {
+      // Criar novo registro de rate limit
+      await supabaseAdmin
+        .from('chat_rate_limits')
+        .insert({
+          user_id: user.id,
+          request_count: 1,
+          window_start: new Date().toISOString()
+        });
+    }
+
     // Validar e parsear corpo da requisição
     let body: any;
     try {

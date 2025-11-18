@@ -66,6 +66,60 @@ serve(async (req) => {
       });
     }
 
+    // Rate limiting para geração de metas (operação mais cara)
+    const maxRecommendations = 5; // 5 gerações de recomendações por hora
+    const windowMinutes = 60;
+    const windowStart = new Date();
+    windowStart.setMinutes(windowStart.getMinutes() - windowMinutes);
+
+    // Verificar rate limit do usuário
+    const { data: rateLimitData, error: rateLimitError } = await supabase
+      .from('chat_rate_limits')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('window_start', windowStart.toISOString())
+      .maybeSingle();
+
+    if (rateLimitError && rateLimitError.code !== 'PGRST116') {
+      console.error("Erro ao verificar rate limit:", rateLimitError);
+    }
+
+    if (rateLimitData) {
+      // Verificar se excedeu o limite
+      if (rateLimitData.request_count >= maxRecommendations) {
+        console.warn(`Rate limit excedido para usuário ${user.id}`);
+        return new Response(JSON.stringify({ 
+          error: "Limite de gerações de metas atingido. Tente novamente em uma hora.",
+          retryAfter: windowMinutes * 60
+        }), {
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(windowMinutes * 60)
+          },
+        });
+      }
+
+      // Incrementar contador
+      await supabase
+        .from('chat_rate_limits')
+        .update({ 
+          request_count: rateLimitData.request_count + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rateLimitData.id);
+    } else {
+      // Criar novo registro de rate limit
+      await supabase
+        .from('chat_rate_limits')
+        .insert({
+          user_id: user.id,
+          request_count: 1,
+          window_start: new Date().toISOString()
+        });
+    }
+
     const requestBody = await req.json();
     
     // Validar os dados do questionário
