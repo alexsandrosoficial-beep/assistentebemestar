@@ -1,11 +1,24 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Schema de validação para as respostas do questionário
+const answersSchema = z.object({
+  objective: z.string().max(500, "Objetivo muito longo"),
+  currentActivity: z.string().max(500, "Resposta muito longa"),
+  sleepHours: z.string().max(100, "Resposta muito longa"),
+  waterIntake: z.string().max(100, "Resposta muito longa"),
+  dietQuality: z.string().max(500, "Resposta muito longa"),
+  stressLevel: z.string().max(200, "Resposta muito longa"),
+  healthConcerns: z.string().max(1000, "Resposta muito longa"),
+  availableTime: z.string().max(200, "Resposta muito longa"),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -53,7 +66,22 @@ serve(async (req) => {
       });
     }
 
-    const { answers } = await req.json();
+    const requestBody = await req.json();
+    
+    // Validar os dados do questionário
+    const validation = answersSchema.safeParse(requestBody.answers);
+    if (!validation.success) {
+      console.error('Validation error:', validation.error);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid questionnaire data', 
+        details: validation.error.issues[0].message 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const answers = validation.data;
     console.log('Generating goal recommendations for user:', user.id);
 
     const systemPrompt = `Você é um assistente de saúde e bem-estar especializado em criar planos personalizados de metas.
