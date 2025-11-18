@@ -23,7 +23,10 @@ import {
   CheckCircle2,
   Edit2,
   Check,
-  X
+  X,
+  FileText,
+  Phone,
+  MapPin
 } from "lucide-react";
 import {
   AlertDialog,
@@ -41,6 +44,9 @@ import { z } from "zod";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
+  bio: z.string().trim().max(500, "Bio muito longa").optional(),
+  phone: z.string().trim().max(20, "Telefone muito longo").optional(),
+  location: z.string().trim().max(100, "Localização muito longa").optional(),
 });
 
 const Perfil = () => {
@@ -52,6 +58,12 @@ const Perfil = () => {
   const [daysActive, setDaysActive] = useState(0);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editedBio, setEditedBio] = useState("");
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [editedPhone, setEditedPhone] = useState("");
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [editedLocation, setEditedLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -79,6 +91,9 @@ const Perfil = () => {
       if (data) {
         setProfile(data);
         setEditedName(data.name || "");
+        setEditedBio(data.bio || "");
+        setEditedPhone(data.phone || "");
+        setEditedLocation(data.location || "");
         
         // Calcular dias desde o cadastro
         const createdDate = new Date(data.created_at);
@@ -118,9 +133,7 @@ const Perfil = () => {
 
   const handleSaveName = async () => {
     try {
-      // Validar input
-      const validated = profileSchema.parse({ name: editedName });
-      
+      const validated = profileSchema.pick({ name: true }).parse({ name: editedName });
       setIsSaving(true);
       
       const { error } = await supabase
@@ -148,6 +161,150 @@ const Perfil = () => {
         toast({
           title: "Erro ao salvar",
           description: "Não foi possível atualizar suas informações",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEditBio = () => {
+    setIsEditingBio(true);
+    setEditedBio(profile?.bio || "");
+  };
+
+  const handleCancelEditBio = () => {
+    setIsEditingBio(false);
+    setEditedBio(profile?.bio || "");
+  };
+
+  const handleSaveBio = async () => {
+    try {
+      const validated = profileSchema.pick({ bio: true }).parse({ bio: editedBio });
+      setIsSaving(true);
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({ bio: validated.bio, updated_at: new Date().toISOString() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, bio: validated.bio });
+      setIsEditingBio(false);
+      
+      toast({
+        title: "Perfil atualizado!",
+        description: "Bio atualizada com sucesso.",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível atualizar a bio",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEditPhone = () => {
+    setIsEditingPhone(true);
+    setEditedPhone(profile?.phone || "");
+  };
+
+  const handleCancelEditPhone = () => {
+    setIsEditingPhone(false);
+    setEditedPhone(profile?.phone || "");
+  };
+
+  const handleSavePhone = async () => {
+    try {
+      const validated = profileSchema.pick({ phone: true }).parse({ phone: editedPhone });
+      setIsSaving(true);
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({ phone: validated.phone, updated_at: new Date().toISOString() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, phone: validated.phone });
+      setIsEditingPhone(false);
+      
+      toast({
+        title: "Perfil atualizado!",
+        description: "Telefone atualizado com sucesso.",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível atualizar o telefone",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEditLocation = () => {
+    setIsEditingLocation(true);
+    setEditedLocation(profile?.location || "");
+  };
+
+  const handleCancelEditLocation = () => {
+    setIsEditingLocation(false);
+    setEditedLocation(profile?.location || "");
+  };
+
+  const handleSaveLocation = async () => {
+    try {
+      const validated = profileSchema.pick({ location: true }).parse({ location: editedLocation });
+      setIsSaving(true);
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({ location: validated.location, updated_at: new Date().toISOString() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, location: validated.location });
+      setIsEditingLocation(false);
+      
+      toast({
+        title: "Perfil atualizado!",
+        description: "Localização atualizada com sucesso.",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível atualizar a localização",
           variant: "destructive",
         });
       }
@@ -351,6 +508,171 @@ const Perfil = () => {
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Email</p>
                       <p className="font-semibold">{profile?.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors group">
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Bio</p>
+                      {isEditingBio ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editedBio}
+                            onChange={(e) => setEditedBio(e.target.value)}
+                            className="h-9"
+                            placeholder="Conte um pouco sobre você"
+                            maxLength={500}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveBio();
+                              if (e.key === 'Escape') handleCancelEditBio();
+                            }}
+                            autoFocus
+                          />
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleSaveBio}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <Check className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleCancelEditBio}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{profile?.bio || "Não informada"}</p>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleStartEditBio}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors group">
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <Phone className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Telefone</p>
+                      {isEditingPhone ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editedPhone}
+                            onChange={(e) => setEditedPhone(e.target.value)}
+                            className="h-9"
+                            placeholder="(00) 00000-0000"
+                            maxLength={20}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSavePhone();
+                              if (e.key === 'Escape') handleCancelEditPhone();
+                            }}
+                            autoFocus
+                          />
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleSavePhone}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <Check className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleCancelEditPhone}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{profile?.phone || "Não informado"}</p>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleStartEditPhone}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-muted/50 to-transparent rounded-lg border border-border/50 hover:border-primary/30 transition-colors group">
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Localização</p>
+                      {isEditingLocation ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editedLocation}
+                            onChange={(e) => setEditedLocation(e.target.value)}
+                            className="h-9"
+                            placeholder="Cidade, Estado"
+                            maxLength={100}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveLocation();
+                              if (e.key === 'Escape') handleCancelEditLocation();
+                            }}
+                            autoFocus
+                          />
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleSaveLocation}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <Check className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleCancelEditLocation}
+                            disabled={isSaving}
+                            className="h-9 w-9 flex-shrink-0"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{profile?.location || "Não informada"}</p>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleStartEditLocation}
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
