@@ -37,47 +37,48 @@ export const Navbar = () => {
     : baseNavLinks;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b glass-effect shadow-soft animate-fade-in-down">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
-          <span className="text-xl font-bold">Assistente</span>
+        <Link to="/" className="flex items-center space-x-2 group">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent shadow-medium transition-all duration-300 group-hover:shadow-glow group-hover:scale-110" />
+          <span className="text-xl font-bold gradient-text">Assistente</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-6">
-          {navLinks.map((link) => (
+        <div className="hidden md:flex items-center space-x-1">
+          {navLinks.map((link, index) => (
             <Link
               key={link.to}
               to={link.to}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-all duration-300 rounded-lg hover:bg-secondary/50 animate-fade-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="rounded-full"
+            className="rounded-full hover:bg-secondary/80 transition-all duration-300 hover:scale-110"
           >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {isDark ? <Sun className="h-5 w-5 animate-glow-pulse" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           {!loading && (
             user ? (
               <Link to="/perfil" className="hidden md:block">
-                <Button variant="gradient">
+                <Button variant="gradient" className="hover-scale shadow-medium">
                   <User className="h-4 w-4 mr-2" />
                   Perfil
                 </Button>
               </Link>
             ) : (
               <Link to="/auth" className="hidden md:block">
-                <Button variant="gradient">Entrar</Button>
+                <Button variant="gradient" className="hover-scale shadow-medium">Entrar</Button>
               </Link>
             )
           )}
@@ -85,32 +86,33 @@ export const Navbar = () => {
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hover:bg-secondary/80 transition-all duration-300">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent className="glass-effect">
               <div className="flex flex-col space-y-4 mt-8">
-                {navLinks.map((link) => (
+                {navLinks.map((link, index) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="text-lg font-medium text-muted-foreground hover:text-primary transition-colors"
+                    className="text-lg font-medium text-muted-foreground hover:text-primary transition-all duration-300 px-4 py-2 rounded-lg hover:bg-secondary/50 animate-fade-in-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     {link.label}
                   </Link>
                 ))}
                 {!loading && (
                   user ? (
-                    <Link to="/perfil">
-                      <Button variant="gradient" className="w-full">
+                    <Link to="/perfil" className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                      <Button variant="gradient" className="w-full hover-scale shadow-medium">
                         <User className="h-4 w-4 mr-2" />
                         Perfil
                       </Button>
                     </Link>
                   ) : (
-                    <Link to="/auth">
-                      <Button variant="gradient" className="w-full">Entrar</Button>
+                    <Link to="/auth" className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                      <Button variant="gradient" className="w-full hover-scale shadow-medium">Entrar</Button>
                     </Link>
                   )
                 )}

@@ -132,12 +132,12 @@ const Planos = () => {
       
       <main className="flex-1">
         {/* Header */}
-        <section className="py-20 bg-gradient-to-b from-background via-secondary/30 to-background">
+        <section className="py-20 bg-gradient-to-b from-background via-secondary/30 to-background animate-fade-in-down">
           <div className="container text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 gradient-text animate-fade-in-up">
               Escolha Seu Plano
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               Comece gratuitamente ou escolha um plano premium para aproveitar todos os recursos
             </p>
           </div>
@@ -145,15 +145,15 @@ const Planos = () => {
 
         {/* Premium Feature Highlight */}
         <section className="py-16 -mt-10">
-          <div className="container max-w-6xl mx-auto mb-16">
-            <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="container max-w-6xl mx-auto mb-16 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-primary/5 via-accent/5 to-background hover-lift shadow-large">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-glow-pulse" />
               <CardHeader className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-2 mb-2 animate-fade-in">
+                  <Crown className="h-6 w-6 text-primary animate-float" />
                   <span className="text-sm font-semibold text-primary uppercase tracking-wider">Exclusivo Premium</span>
                 </div>
-                <CardTitle className="text-3xl md:text-4xl">Central de Metas e Objetivos Personalizados</CardTitle>
+                <CardTitle className="text-3xl md:text-4xl gradient-text">Central de Metas e Objetivos Personalizados</CardTitle>
                 <CardDescription className="text-lg">
                   Transforme suas intenções em resultados concretos com nossa ferramenta inteligente de gestão de metas
                 </CardDescription>
@@ -198,15 +198,16 @@ const Planos = () => {
               {plans.map((plan, index) => (
                 <Card 
                   key={index}
-                  className={`relative ${
+                  className={`relative hover-lift animate-fade-in-up ${
                     plan.highlighted 
-                      ? 'border-primary border-2 shadow-lg scale-105' 
+                      ? 'border-primary border-2 shadow-large scale-105' 
                       : 'border-2'
                   }`}
+                  style={{ animationDelay: `${index * 0.15}s` }}
                 >
                   {plan.highlighted && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                      <span className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold shadow-glow animate-glow-pulse">
                         Mais Popular
                       </span>
                     </div>
@@ -234,7 +235,7 @@ const Planos = () => {
                   
                   <CardFooter>
                     <Button 
-                      className="w-full" 
+                      className="w-full hover-scale shadow-medium" 
                       variant={plan.highlighted ? "gradient" : "outline"}
                       size="lg"
                       onClick={() => handleSelectPlan(
@@ -250,10 +251,10 @@ const Planos = () => {
             </div>
 
             {/* Trial Info */}
-            <div className="mt-16 text-center">
-              <Card className="max-w-2xl mx-auto border-2 bg-gradient-to-br from-primary/5 to-accent/5">
+            <div className="mt-16 text-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+              <Card className="max-w-2xl mx-auto border-2 bg-gradient-to-br from-primary/5 to-accent/5 hover-lift shadow-medium">
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-center gap-2">
+                  <CardTitle className="flex items-center justify-center gap-2 gradient-text">
                     ⏰ Período de Teste
                   </CardTitle>
                   <CardDescription className="text-base space-y-2">
@@ -275,11 +276,11 @@ const Planos = () => {
 
         {/* FAQ Preview */}
         <section className="py-20 bg-muted/30">
-          <div className="container max-w-4xl">
-            <h2 className="text-3xl font-bold text-center mb-12">Perguntas Frequentes</h2>
+          <div className="container max-w-4xl animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+            <h2 className="text-3xl font-bold text-center mb-12 gradient-text">Perguntas Frequentes</h2>
             
             <div className="space-y-6">
-              <Card>
+              <Card className="hover-lift animate-fade-in-up shadow-soft" style={{ animationDelay: '0.9s' }}>
                 <CardHeader>
                   <CardTitle className="text-lg">Posso mudar de plano depois?</CardTitle>
                 </CardHeader>
@@ -291,7 +292,7 @@ const Planos = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover-lift animate-fade-in-up shadow-soft" style={{ animationDelay: '1s' }}>
                 <CardHeader>
                   <CardTitle className="text-lg">Como funciona o teste gratuito?</CardTitle>
                 </CardHeader>
@@ -303,7 +304,7 @@ const Planos = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover-lift animate-fade-in-up shadow-soft" style={{ animationDelay: '1.1s' }}>
                 <CardHeader>
                   <CardTitle className="text-lg">O assistente substitui médicos?</CardTitle>
                 </CardHeader>
