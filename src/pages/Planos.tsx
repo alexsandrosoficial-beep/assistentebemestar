@@ -23,15 +23,15 @@ const Planos = () => {
     }
   }, [user, loading, navigate]);
 
-  const handleSelectPlan = async (planType: 'free' | 'premium' | 'family') => {
+  const handleSelectPlan = async (planType: 'free' | 'vip' | 'premium' | 'family') => {
     if (!user) {
       navigate('/auth');
       return;
     }
 
     // For paid plans, show Pix payment dialog
-    if (planType === 'premium' || planType === 'family') {
-      setSelectedPlan(planType);
+    if (planType === 'vip' || planType === 'premium' || planType === 'family') {
+      setSelectedPlan(planType as 'premium' | 'family');
       setShowPixDialog(true);
       return;
     }
@@ -90,8 +90,9 @@ const Planos = () => {
       description: "Teste gratuito de 7 dias",
       features: [
         "7 dias de acesso completo",
-        "Todas as funcionalidades",
-        "Conversas ilimitadas",
+        "Todas as funcionalidades Premium",
+        "Chat com IA avançada",
+        "Chat de voz incluído",
         "Sem compromisso"
       ],
       cta: "Começar Teste Grátis",
@@ -101,11 +102,13 @@ const Planos = () => {
       name: "VIP",
       price: "R$ 9,90",
       period: "/mês",
-      description: "Para uso individual completo",
+      description: "Para uso individual",
       features: [
+        "Chat de texto com IA Gemini Flash",
         "Perguntas ilimitadas",
         "Recomendações personalizadas",
-        "Suporte"
+        "Central de metas e objetivos",
+        "Suporte padrão"
       ],
       cta: "Assinar VIP",
       highlighted: false
@@ -116,10 +119,12 @@ const Planos = () => {
       period: "/mês",
       description: "Acesso completo e avançado",
       features: [
-        "Respostas e recomendações personalizadas ilimitadas",
-        "Central de metas e objetivos com assistente de saúde",
-        "Acompanhamento inteligente de progresso",
-        "Suporte Premium"
+        "Chat com GPT-5 e Gemini Pro",
+        "Chat de voz em tempo real",
+        "Escolha de vozes personalizadas",
+        "Central de metas com IA avançada",
+        "Respostas e análises aprofundadas",
+        "Suporte Premium prioritário"
       ],
       cta: "Assinar Premium",
       highlighted: true
@@ -240,7 +245,7 @@ const Planos = () => {
                       size="lg"
                       onClick={() => handleSelectPlan(
                         plan.name === 'Gratuito' ? 'free' : 
-                        plan.name === 'VIP' ? 'premium' : 'premium'
+                        plan.name === 'VIP' ? 'vip' : 'premium'
                       )}
                     >
                       {plan.cta}

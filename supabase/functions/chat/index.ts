@@ -187,14 +187,33 @@ serve(async (req) => {
     const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop()?.content || '';
     const { model: selectedModel, taskType } = selectModel(lastUserMessage);
     
-    // Verificar se o usuário tem acesso ao modelo selecionado
-    const canUseGPT5 = subscription.plan_type === 'premium';
+    // Definir modelos permitidos por plano
+    const ALLOWED_MODELS: Record<string, string[]> = {
+      free: ['openai/gpt-5', 'google/gemini-2.5-pro', 'google/gemini-2.5-flash'], // Teste completo
+      vip: ['google/gemini-2.5-flash'], // Apenas Gemini Flash
+      premium: ['openai/gpt-5', 'google/gemini-2.5-pro', 'google/gemini-2.5-flash'] // Todos
+    };
+    
+    const allowedModels = ALLOWED_MODELS[subscription.plan_type] || ['google/gemini-2.5-flash'];
     let modelToUse = selectedModel;
     
-    // Se tentou usar GPT-5 mas não tem Premium, usar Gemini Pro
-    if (selectedModel === 'openai/gpt-5' && !canUseGPT5) {
-      console.log('User tried to use GPT-5 but has plan:', subscription.plan_type, '- falling back to Gemini Pro');
-      modelToUse = 'google/gemini-2.5-pro';
+    // Verificar se o modelo selecionado está disponível no plano
+    if (!allowedModels.includes(selectedModel)) {
+      console.log(`Modelo ${selectedModel} não disponível para plano ${subscription.plan_type}`);
+      
+      // Para plano VIP que tentou usar modelos premium
+      if (subscription.plan_type === 'vip' && (selectedModel === 'openai/gpt-5' || selectedModel === 'google/gemini-2.5-pro')) {
+        return new Response(JSON.stringify({ 
+          error: "Esta consulta requer modelos de IA avançados (GPT-5 ou Gemini Pro) disponíveis apenas no plano Premium. Faça upgrade para desbloquear.",
+          code: 'UPGRADE_REQUIRED'
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Fallback para modelo disponível
+      modelToUse = allowedModels[0];
     }
     
     console.log('Selected model:', modelToUse, 'for task type:', taskType, 'user plan:', subscription.plan_type);

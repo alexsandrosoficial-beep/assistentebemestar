@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Sparkles, Lock, Clock, Bot, User } from 'lucide-react';
+import { Send, Trash2, Sparkles, Lock, Clock, Bot, User, Crown, Zap } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import ReactMarkdown from 'react-markdown';
 import { supabaseTyped as supabase } from '@/integrations/supabase/client-typed';
 
@@ -16,6 +18,7 @@ const Chat = () => {
   const [input, setInput] = useState('');
   const { messages, isLoading, sendMessage, clearChat } = useChat();
   const { user, loading, checkSubscription } = useAuth();
+  const { subscription, isPremium, isVip, isFree } = useSubscription();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
@@ -167,6 +170,38 @@ const Chat = () => {
             )}
           </div>
         </div>
+
+        {/* Plan Info Banner */}
+        {subscription && (
+          <Alert className="mb-4 animate-fade-in border-primary/20 bg-primary/5">
+            <AlertDescription className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                {isPremium && <Crown className="w-4 h-4 text-primary" />}
+                {isVip && <Sparkles className="w-4 h-4 text-primary" />}
+                {isFree && <Zap className="w-4 h-4 text-primary" />}
+                <span className="font-medium">
+                  Plano {isPremium ? 'Premium' : isVip ? 'VIP' : 'Gratuito'}
+                </span>
+                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-sm text-muted-foreground">
+                  {isPremium && 'GPT-5, Gemini Pro e Chat de Voz'}
+                  {isVip && 'Gemini Flash'}
+                  {isFree && 'Acesso completo (teste de 7 dias)'}
+                </span>
+              </div>
+              {!isPremium && (
+                <Button 
+                  variant="link" 
+                  size="sm"
+                  onClick={() => navigate('/planos')}
+                  className="h-auto p-0 text-primary hover:text-primary/80"
+                >
+                  Fazer upgrade →
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Chat Container */}
         <div className="flex-1 backdrop-blur-sm bg-card/50 rounded-2xl border shadow-xl flex flex-col overflow-hidden animate-fade-in-up">
