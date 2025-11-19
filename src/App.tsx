@@ -10,6 +10,7 @@ import Politica from "./pages/Politica";
 import Termos from "./pages/Termos";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
+import VoiceChat from "./pages/VoiceChat";
 import Perfil from "./pages/Perfil";
 import Metas from "./pages/Metas";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/termos" element={<Termos />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/voz" element={<VoiceChat />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/metas" element={<Metas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

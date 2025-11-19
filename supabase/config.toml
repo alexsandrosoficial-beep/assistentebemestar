@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.generate-goal-recommendations]
 verify_jwt = true
+
+[functions.realtime-voice]
+verify_jwt = false

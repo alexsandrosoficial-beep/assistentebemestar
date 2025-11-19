@@ -29,11 +29,12 @@ export const Navbar = () => {
     { to: "/", label: "Início" },
     { to: "/planos", label: "Planos" },
     { to: "/chat", label: "Chat IA" },
+    { to: "/voz", label: "Voz IA" },
     { to: "/contato", label: "Contato" },
   ];
 
   const navLinks = isPremium 
-    ? [...baseNavLinks.slice(0, 3), { to: "/metas", label: "Metas" }, ...baseNavLinks.slice(3)]
+    ? [...baseNavLinks.slice(0, 4), { to: "/metas", label: "Metas" }, ...baseNavLinks.slice(4)]
     : baseNavLinks;
 
   return (
