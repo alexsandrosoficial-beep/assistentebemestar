@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_logs: {
+        Row: {
+          completion_tokens: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          model_used: string
+          prompt_tokens: number | null
+          response_time_ms: number | null
+          success: boolean
+          task_type: string | null
+          user_id: string
+        }
+        Insert: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model_used: string
+          prompt_tokens?: number | null
+          response_time_ms?: number | null
+          success?: boolean
+          task_type?: string | null
+          user_id: string
+        }
+        Update: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model_used?: string
+          prompt_tokens?: number | null
+          response_time_ms?: number | null
+          success?: boolean
+          task_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
