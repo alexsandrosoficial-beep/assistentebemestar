@@ -138,10 +138,10 @@ const Chat = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Assistente de Saúde IA
+                Assistente ConnectAI
               </h1>
               <p className="text-sm text-muted-foreground">
-                Powered by AI • Sempre disponível
+                Gemini Pro & GPT-5 • Sempre disponível
               </p>
             </div>
           </div>

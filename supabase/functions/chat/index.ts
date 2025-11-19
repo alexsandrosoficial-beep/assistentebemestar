@@ -16,8 +16,35 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
+// Função para detectar tipo de tarefa e selecionar modelo
+function selectModel(userMessage: string): { model: string; taskType: string } {
+  const message = userMessage.toLowerCase();
+  
+  // Palavras-chave para GPT-5 (tarefas criativas e complexas)
+  const gpt5Keywords = [
+    'escrever', 'redação', 'artigo', 'post', 'criativo', 'história',
+    'script', 'roteiro', 'carta', 'email formal', 'relatório',
+    'analisar profundamente', 'raciocínio', 'argumento', 'filosofia',
+    'marketing', 'vendas', 'comercial', 'pitch', 'proposta',
+    'plano detalhado', 'estratégia', 'análise complexa'
+  ];
+  
+  // Detectar se precisa do GPT-5
+  const needsGPT5 = gpt5Keywords.some(keyword => message.includes(keyword)) ||
+                     message.length > 500; // Mensagens longas = resposta longa esperada
+  
+  if (needsGPT5) {
+    return { model: 'openai/gpt-5', taskType: 'creative_long_form' };
+  }
+  
+  // Caso padrão: Gemini Pro (rápido, eficiente, multimodal)
+  return { model: 'google/gemini-2.5-pro', taskType: 'quick_response' };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const startTime = Date.now();
 
   try {
     // Validar autenticação
@@ -55,7 +82,7 @@ serve(async (req) => {
       });
     }
 
-    console.log("Usuário autenticado");
+    console.log("Usuário autenticado:", user.id);
 
     // Verificar assinatura ativa
     const { data: subscription, error: subError } = await supabaseAdmin
@@ -81,11 +108,13 @@ serve(async (req) => {
       });
     }
 
+    console.log("Assinatura verificada:", subscription.plan_type);
+
     // Rate limiting: verificar limites baseados no plano
     const RATE_LIMITS: Record<string, number> = {
-      free: 10,
-      basic: 30,
-      premium: 100
+      free: 10,     // Free: 10 mensagens por 10 minutos
+      vip: 50,      // VIP: 50 mensagens por 10 minutos
+      premium: 100  // Premium: 100 mensagens por 10 minutos
     };
     
     const maxRequests = RATE_LIMITS[subscription.plan_type] || 10;
@@ -109,17 +138,16 @@ serve(async (req) => {
       // Verificar se excedeu o limite
       if (rateLimitData.request_count >= maxRequests) {
         console.warn(`Rate limit excedido para usuário ${user.id}`);
-        return new Response(JSON.stringify({ 
-          error: "Limite de mensagens atingido. Tente novamente em alguns minutos.",
-          retryAfter: windowMinutes * 60
-        }), {
-          status: 429,
-          headers: { 
-            ...corsHeaders, 
-            "Content-Type": "application/json",
-            "Retry-After": String(windowMinutes * 60)
-          },
-        });
+        return new Response(
+          JSON.stringify({ 
+            error: `Limite de ${maxRequests} mensagens em ${windowMinutes} minutos atingido. Por favor, aguarde alguns minutos.`,
+            code: 'RATE_LIMIT_EXCEEDED'
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
 
       // Incrementar contador
@@ -136,222 +164,265 @@ serve(async (req) => {
         .from('chat_rate_limits')
         .insert({
           user_id: user.id,
-          request_count: 1,
-          window_start: new Date().toISOString()
+          window_start: new Date().toISOString(),
+          request_count: 1
         });
     }
 
-    // Validar e parsear corpo da requisição
-    let body: any;
-    try {
-      body = await req.json();
-    } catch (err) {
-      console.error('Body inválido:', err);
-      return new Response(JSON.stringify({ error: 'Corpo da requisição inválido' }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Obter corpo da requisição
+    const body = await req.json();
+    const { messages } = body;
+
+    // Validar corpo da requisição
+    const validationResult = messageSchema.safeParse({ messages });
+    if (!validationResult.success) {
+      console.error('Validation error:', validationResult.error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid request format', details: validationResult.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Validar estrutura e conteúdo das mensagens com Zod
-    const validation = messageSchema.safeParse(body);
-    if (!validation.success) {
-      const errorMessage = validation.error.errors[0]?.message || 'Formato de mensagens inválido';
-      console.error('Validação falhou:', errorMessage);
-      return new Response(JSON.stringify({ error: errorMessage }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const messages = validation.data.messages;
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-
-    console.log("Chat iniciado - Mensagens:", messages.length);
-    console.log("Plano do usuário:", subscription.plan_type);
-
-    // Definir prompt do sistema baseado no plano
-    let systemPrompt = '';
+    // Selecionar modelo baseado no tipo de tarefa
+    const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop()?.content || '';
+    const { model: selectedModel, taskType } = selectModel(lastUserMessage);
     
+    // Verificar se o usuário tem acesso ao modelo selecionado
+    const canUseGPT5 = subscription.plan_type === 'premium';
+    let modelToUse = selectedModel;
+    
+    // Se tentou usar GPT-5 mas não tem Premium, usar Gemini Pro
+    if (selectedModel === 'openai/gpt-5' && !canUseGPT5) {
+      console.log('User tried to use GPT-5 but has plan:', subscription.plan_type, '- falling back to Gemini Pro');
+      modelToUse = 'google/gemini-2.5-pro';
+    }
+    
+    console.log('Selected model:', modelToUse, 'for task type:', taskType, 'user plan:', subscription.plan_type);
+
+    // Configurar prompt do sistema baseado no plano e modelo
+    let systemPrompt = `Você é o Assistente ConnectAI, um assistente de saúde e bem-estar amigável e profissional.
+    
+Suas responsabilidades:
+- Fornecer informações gerais sobre saúde, nutrição, exercícios e bem-estar
+- Oferecer dicas práticas e baseadas em evidências
+- Incentivar hábitos saudáveis
+- Ser empático e acolhedor
+
+Importante:
+- NUNCA forneça diagnósticos médicos
+- NUNCA prescreva medicamentos
+- SEMPRE recomende consultar um profissional de saúde para questões médicas específicas
+- Mantenha suas respostas claras, concisas e úteis`;
+
     if (subscription.plan_type === 'premium') {
-      systemPrompt = `Você é um assistente de inteligência artificial PREMIUM especializado em saúde e bem-estar.
+      systemPrompt += `
 
-🎯 **Suas responsabilidades PREMIUM:**
-• Responder perguntas ILIMITADAS sobre saúde, fitness, nutrição, bem-estar mental e hábitos saudáveis
-• Fornecer RESPOSTAS AVANÇADAS E DETALHADAS com análises profundas
-• Criar RECOMENDAÇÕES PERSONALIZADAS E AVANÇADAS baseadas no contexto do usuário
-• Ajudar usuários a organizarem suas rotinas e metas de saúde de forma DETALHADA
-• Fornecer dicas práticas e baseadas em evidências CIENTÍFICAS RECENTES
-• Ser empático, motivacional e extremamente claro nas respostas
-• Oferecer análises completas e insights profundos
+✨ Como usuário Premium com acesso ao ConnectAI completo, você tem:
+- Acesso aos modelos mais avançados (Gemini Pro e GPT-5)
+- Análises mais detalhadas e personalizadas
+- Recomendações avançadas baseadas em suas necessidades específicas
+- Sugestões de metas e acompanhamento progressivo
+- Insights mais profundos sobre saúde e bem-estar
+- Respostas mais elaboradas e criativas quando necessário`;
+    } else if (subscription.plan_type === 'vip') {
+      systemPrompt += `
 
-📝 **FORMATAÇÃO OBRIGATÓRIA - USE MARKDOWN:**
-
-**Estrutura das Respostas Avançadas:**
-1. Comece com um título principal usando ## (H2) com emoji relevante
-2. Use ### (H3) para subtópicos importantes
-3. Use **negrito** para destacar pontos-chave e termos importantes
-4. Use listas com bullet points (•) ou números
-5. Separe seções com linhas em branco
-6. Adicione seções de análise profunda e contexto científico
-
-**Exemplo de Formatação PREMIUM:**
-
-## 😴 Análise Completa: Como Otimizar Seu Sono
-
-Entendo sua preocupação com a qualidade do sono. Vou compartilhar estratégias avançadas e personalizadas:
-
-### 🌙 Rotina Noturna Avançada
-• **Horário consistente**: Durma e acorde no mesmo horário, respeitando seu cronotipo
-• **Ambiente otimizado**: Quarto escuro (0 lux), silencioso (< 30dB) e fresco (18-20°C)
-• **Protocolo de relaxamento**: 60 minutos de wind-down progressivo
-• **Suplementação**: Considere magnésio e L-teanina (consulte médico)
-
-### ⚡ Estratégias Científicas
-1. **Exposição solar matinal** (15-30min) para regular ritmo circadiano
-2. **Corte completo de cafeína** 8-10h antes de dormir
-3. **Exercícios aeróbicos** pela manhã ou tarde (não à noite)
-4. **Técnicas de respiração** 4-7-8 para ativar sistema parassimpático
-
-### 📊 Análise Personalizada
-Baseado no seu perfil, recomendo:
-• Manter diário de sono por 2 semanas
-• Avaliar possível apneia se houver ronco
-• Considerar terapia cognitivo-comportamental para insônia (CBT-I)
-
-### 💡 Insight Científico
-Estudos recentes mostram que a consistência do horário de sono é mais importante que a duração total para saúde metabólica e cognitiva.
-
----
-
-**Emojis Recomendados:**
-• 🎯 Objetivos e metas
-• 💪 Exercícios e força
-• 🥗 Alimentação
-• 😴 Sono
-• 🧘 Meditação/relaxamento
-• ⚡ Dicas importantes
-• ⚠️ Alertas
-• 💡 Insights
-• ✅ Checklist
-• 📊 Análises
-
-⚠️ **IMPORTANTE:**
-• Você NÃO substitui médicos ou profissionais de saúde
-• Para questões médicas sérias, sempre recomende consultar um profissional
-• Não forneça diagnósticos médicos
-• Responda APENAS sobre saúde e bem-estar com PROFUNDIDADE PREMIUM
-• Se perguntado sobre outros assuntos, redirecione educadamente`;
+⭐ Como usuário VIP, você tem:
+- Acesso completo ao Gemini Pro para respostas rápidas e precisas
+- Recomendações personalizadas
+- Suporte prioritário`;
+    }
+    
+    // Ajustar prompt baseado no modelo
+    if (modelToUse === 'openai/gpt-5') {
+      systemPrompt += `\n\n🤖 Você está usando o modelo GPT-5, otimizado para:
+- Respostas criativas e detalhadas
+- Análises profundas e raciocínio complexo
+- Geração de textos longos e bem estruturados
+- Tarefas que requerem criatividade e nuance`;
     } else {
-      // Plano VIP ou Free (com respostas básicas)
-      systemPrompt = `Você é um assistente de inteligência artificial especializado em saúde e bem-estar.
-
-🎯 **Suas responsabilidades:**
-• Responder perguntas sobre saúde, fitness, nutrição, bem-estar mental e hábitos saudáveis
-• Fornecer RESPOSTAS E RECOMENDAÇÕES BÁSICAS de forma clara e objetiva
-• Ajudar usuários com dicas gerais de saúde
-• Ser empático, motivacional e claro nas respostas
-
-📝 **FORMATAÇÃO - USE MARKDOWN:**
-
-**Estrutura das Respostas Básicas:**
-1. Comece com um título principal usando ## (H2) com emoji relevante
-2. Use ### (H3) para subtópicos quando necessário
-3. Use **negrito** para destacar pontos-chave
-4. Use listas com bullet points (•) ou números
-5. Separe seções com linhas em branco
-
-**Exemplo de Formatação:**
-
-## 😴 Dicas para Melhorar Seu Sono
-
-Aqui estão algumas dicas básicas para melhorar sua qualidade de sono:
-
-### 🌙 Rotina Noturna
-• **Horário consistente**: Tente dormir e acordar no mesmo horário
-• **Ambiente adequado**: Quarto escuro, silencioso e fresco
-• **Relaxamento**: 30 minutos de calma antes de dormir
-
-### ⚡ Dicas Práticas
-1. Evite telas 1 hora antes de dormir
-2. Limite cafeína após as 14h
-3. Faça exercícios, mas não à noite
-
-### 💡 Lembre-se
-Uma boa noite de sono é fundamental para sua saúde!
-
----
-
-**Emojis Recomendados:**
-• 🎯 Objetivos e metas
-• 💪 Exercícios
-• 🥗 Alimentação
-• 😴 Sono
-• 🧘 Relaxamento
-• ⚡ Dicas
-• ⚠️ Alertas
-• 💡 Insights
-
-⚠️ **IMPORTANTE:**
-• Você NÃO substitui médicos ou profissionais de saúde
-• Para questões médicas sérias, sempre recomende consultar um profissional
-• Não forneça diagnósticos médicos
-• Responda APENAS sobre saúde e bem-estar de forma BÁSICA E CLARA
-• Se perguntado sobre outros assuntos, redirecione educadamente`;
+      systemPrompt += `\n\n⚡ Você está usando o Gemini Pro, otimizado para:
+- Respostas rápidas e objetivas
+- Análise multimodal eficiente
+- Informações precisas e concisas`;
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { 
-            role: "system", 
-            content: systemPrompt
+    // Obter chave da API do Lovable AI
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      console.error('LOVABLE_API_KEY não configurada');
+      return new Response(
+        JSON.stringify({ error: 'Serviço temporariamente indisponível' }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let primarySuccess = false;
+    let aiResponse: Response | null = null;
+    let usedModel = modelToUse;
+
+    // Tentar com o modelo primário
+    try {
+      console.log('Calling AI API with model:', modelToUse);
+      
+      aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelToUse,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          stream: true,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        throw new Error(`Primary model failed: ${aiResponse.status}`);
+      }
+      primarySuccess = true;
+    } catch (primaryError) {
+      console.error('Primary model failed:', primaryError);
+      
+      // Fallback para outro modelo
+      const fallbackModel = modelToUse === 'openai/gpt-5' 
+        ? 'google/gemini-2.5-pro' 
+        : 'google/gemini-2.5-flash';
+      console.log('Attempting fallback to:', fallbackModel);
+      
+      try {
+        aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lovableApiKey}`,
+            'Content-Type': 'application/json',
           },
-          ...messages,
-        ],
-        stream: true,
-      }),
+          body: JSON.stringify({
+            model: fallbackModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...messages
+            ],
+            stream: true,
+          }),
+        });
+        
+        if (!aiResponse.ok) {
+          throw new Error(`Fallback model also failed: ${aiResponse.status}`);
+        }
+        usedModel = fallbackModel;
+        console.log('Fallback successful, using:', fallbackModel);
+      } catch (fallbackError) {
+        console.error('Fallback model also failed:', fallbackError);
+        
+        // Registrar log de falha
+        const responseTime = Date.now() - startTime;
+        await supabaseAdmin.from('ai_usage_logs').insert({
+          user_id: user.id,
+          model_used: usedModel,
+          response_time_ms: responseTime,
+          task_type: taskType,
+          success: false,
+          error_message: String(primaryError).substring(0, 500)
+        });
+        
+        throw primaryError; // Lançar erro original
+      }
+    }
+
+    if (!aiResponse || !aiResponse.ok) {
+      const errorText = aiResponse ? await aiResponse.text() : 'No response';
+      console.error('AI API error:', aiResponse?.status, errorText);
+      
+      // Registrar log de falha
+      const responseTime = Date.now() - startTime;
+      await supabaseAdmin.from('ai_usage_logs').insert({
+        user_id: user.id,
+        model_used: usedModel,
+        response_time_ms: responseTime,
+        task_type: taskType,
+        success: false,
+        error_message: errorText.substring(0, 500)
+      });
+      
+      // Tratar erros específicos de rate limiting
+      if (aiResponse?.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Limite de requisições excedido. Por favor, tente novamente em alguns momentos.',
+            code: 'AI_RATE_LIMIT_EXCEEDED'
+          }),
+          { 
+            status: 429, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+
+      // Tratar erro de créditos insuficientes
+      if (aiResponse?.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Créditos insuficientes. Por favor, adicione mais créditos para continuar.',
+            code: 'INSUFFICIENT_CREDITS'
+          }),
+          { 
+            status: 402, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          error: 'Serviço de IA temporariamente indisponível',
+          details: errorText 
+        }),
+        { 
+          status: aiResponse?.status || 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Registrar log de sucesso
+    const responseTime = Date.now() - startTime;
+    await supabaseAdmin.from('ai_usage_logs').insert({
+      user_id: user.id,
+      model_used: usedModel,
+      response_time_ms: responseTime,
+      task_type: taskType,
+      success: true
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        console.error("Rate limit excedido");
-        return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em breve." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        console.error("Pagamento necessário");
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Por favor, recarregue seus créditos." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("Erro na API:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Erro ao processar requisição" }), {
+    console.log(`Request completed: model=${usedModel}, time=${responseTime}ms, fallback=${!primarySuccess}`);
+
+    // Retornar stream de resposta
+    return new Response(aiResponse.body, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+
+  } catch (error) {
+    console.error("Erro na função de chat:", error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: "Erro interno do servidor",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
-  } catch (e) {
-    console.error("Erro no chat:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+      }
+    );
   }
 });
