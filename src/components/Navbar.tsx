@@ -4,6 +4,7 @@ import { Menu, Moon, Sun, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useRole } from "@/hooks/useRole";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +15,7 @@ export const Navbar = () => {
   const [isDark, setIsDark] = useState(false);
   const { user, loading } = useAuth();
   const { isPremium } = useSubscription();
+  const { isAdmin } = useRole();
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -33,9 +35,12 @@ export const Navbar = () => {
     { to: "/contato", label: "Contato" },
   ];
 
+  // Add admin link for admin users
+  const adminLinks = isAdmin ? [{ to: "/admin", label: "Admin" }] : [];
+
   const navLinks = isPremium 
-    ? [...baseNavLinks.slice(0, 4), { to: "/metas", label: "Metas" }, ...baseNavLinks.slice(4)]
-    : baseNavLinks;
+    ? [...baseNavLinks.slice(0, 4), { to: "/metas", label: "Metas" }, ...baseNavLinks.slice(4), ...adminLinks]
+    : [...baseNavLinks, ...adminLinks];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b glass-effect shadow-soft animate-fade-in-down">

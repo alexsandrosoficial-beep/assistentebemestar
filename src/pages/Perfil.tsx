@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
+import { PlanBenefits } from "@/components/PlanBenefits";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
@@ -801,6 +802,13 @@ const Perfil = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Benefícios do Plano */}
+            {subscription && (
+              <div className="md:col-span-2">
+                <PlanBenefits planType={subscription.plan_type as 'free' | 'vip' | 'premium'} />
+              </div>
+            )}
 
             {/* Voice Selector - Only for Premium users */}
             {subscription && subscription.plan_type === 'premium' && user && (

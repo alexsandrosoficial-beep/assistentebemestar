@@ -13,6 +13,7 @@ import Chat from "./pages/Chat";
 import VoiceChat from "./pages/VoiceChat";
 import Perfil from "./pages/Perfil";
 import Metas from "./pages/Metas";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/voz" element={<VoiceChat />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/metas" element={<Metas />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

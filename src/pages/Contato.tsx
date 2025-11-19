@@ -79,6 +79,7 @@ const Contato = () => {
                   <WhatsAppButton 
                     message={getWhatsAppMessage("default")}
                     size="lg"
+                    autoFillUserData={true}
                   />
                   <p className="text-xs text-muted-foreground mt-4">
                     ✅ Resposta rápida • ✅ Suporte humanizado • ✅ Horário comercial
