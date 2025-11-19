@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { SoundWave } from './SoundWave';
 import { cn } from '@/lib/utils';
 
 const VOICE_NAMES: Record<string, string> = {
@@ -67,7 +68,7 @@ export const VoiceChat = ({ userId }: VoiceChatProps) => {
 
       <CardContent className="space-y-6">
         {/* Status */}
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-4">
           {/* Voice indicator */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Volume2 className="w-4 h-4" />
@@ -83,20 +84,38 @@ export const VoiceChat = ({ userId }: VoiceChatProps) => {
             </p>
           )}
           {isConnected && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                {isRecording && (
-                  <div className="flex items-center gap-2 text-green-500">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-sm font-medium">Ouvindo...</span>
-                  </div>
-                )}
-                {isSpeaking && (
-                  <div className="flex items-center gap-2 text-primary">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    <span className="text-sm font-medium">Assistente falando...</span>
-                  </div>
-                )}
+            <div className="space-y-4">
+              {/* Sound Wave Visualizers */}
+              <div className="flex flex-col items-center gap-6 py-4">
+                {/* User speaking indicator */}
+                <div className="flex flex-col items-center gap-2">
+                  <SoundWave 
+                    isActive={isRecording} 
+                    variant="user"
+                    className="h-16"
+                  />
+                  <span className={cn(
+                    "text-sm font-medium transition-colors",
+                    isRecording ? "text-green-500" : "text-muted-foreground"
+                  )}>
+                    {isRecording ? "Você está falando..." : "Aguardando sua voz"}
+                  </span>
+                </div>
+
+                {/* Assistant speaking indicator */}
+                <div className="flex flex-col items-center gap-2">
+                  <SoundWave 
+                    isActive={isSpeaking} 
+                    variant="assistant"
+                    className="h-16"
+                  />
+                  <span className={cn(
+                    "text-sm font-medium transition-colors",
+                    isSpeaking ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {isSpeaking ? "Assistente falando..." : "Aguardando resposta"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
