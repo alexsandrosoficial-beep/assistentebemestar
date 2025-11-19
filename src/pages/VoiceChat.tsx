@@ -71,7 +71,7 @@ const VoiceChatPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background flex flex-col">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
-        <VoiceChatComponent />
+        <VoiceChatComponent userId={user?.id} />
       </main>
       <Footer />
     </div>

@@ -1,22 +1,38 @@
 import { useState } from 'react';
-import { Mic, MicOff, Phone, PhoneOff, MessageSquare } from 'lucide-react';
+import { Mic, MicOff, Phone, PhoneOff, MessageSquare, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { cn } from '@/lib/utils';
 
-export const VoiceChat = () => {
+const VOICE_NAMES: Record<string, string> = {
+  'alloy': 'Alloy',
+  'echo': 'Echo',
+  'shimmer': 'Shimmer',
+  'ash': 'Ash',
+  'ballad': 'Ballad',
+  'coral': 'Coral',
+  'sage': 'Sage',
+  'verse': 'Verse',
+};
+
+interface VoiceChatProps {
+  userId?: string;
+}
+
+export const VoiceChat = ({ userId }: VoiceChatProps) => {
   const {
     messages,
     isConnected,
     isRecording,
     isSpeaking,
     error,
+    preferredVoice,
     connect,
     disconnect,
     sendTextMessage
-  } = useVoiceChat();
+  } = useVoiceChat(userId);
 
   const [textInput, setTextInput] = useState('');
 
@@ -51,7 +67,13 @@ export const VoiceChat = () => {
 
       <CardContent className="space-y-6">
         {/* Status */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          {/* Voice indicator */}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Volume2 className="w-4 h-4" />
+            <span>Voz: {VOICE_NAMES[preferredVoice] || 'Alloy'}</span>
+          </div>
+
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
@@ -186,6 +208,9 @@ export const VoiceChat = () => {
         <div className="text-center text-xs text-muted-foreground space-y-1">
           <p>💡 Fale naturalmente com o assistente</p>
           <p>🎤 O microfone detectará automaticamente quando você parar de falar</p>
+          <p className="text-primary font-medium">
+            ⭐ Personalize a voz do assistente nas configurações do Perfil
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { AudioRecorder, AudioQueue, encodeAudioForAPI } from '@/utils/audioUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceChatMessage {
   role: 'user' | 'assistant';
@@ -7,12 +8,13 @@ interface VoiceChatMessage {
   timestamp: Date;
 }
 
-export const useVoiceChat = () => {
+export const useVoiceChat = (userId?: string) => {
   const [messages, setMessages] = useState<VoiceChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preferredVoice, setPreferredVoice] = useState<string>('alloy');
 
   const wsRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
@@ -20,6 +22,35 @@ export const useVoiceChat = () => {
   const audioQueueRef = useRef<AudioQueue | null>(null);
   const currentTranscriptRef = useRef<string>('');
   const currentResponseRef = useRef<string>('');
+
+  // Load preferred voice from user profile
+  useEffect(() => {
+    const loadPreferredVoice = async () => {
+      if (!userId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('preferred_voice')
+          .eq('id', userId)
+          .single();
+
+        if (error) {
+          console.error('Error loading preferred voice:', error);
+          return;
+        }
+
+        if (data?.preferred_voice) {
+          setPreferredVoice(data.preferred_voice);
+          console.log('Loaded preferred voice:', data.preferred_voice);
+        }
+      } catch (err) {
+        console.error('Failed to load preferred voice:', err);
+      }
+    };
+
+    loadPreferredVoice();
+  }, [userId]);
 
   // Initialize audio context
   useEffect(() => {
@@ -41,9 +72,9 @@ export const useVoiceChat = () => {
       // Request microphone access first
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Connect to WebSocket relay
-      const wsUrl = 'wss://eutknxcaiepkkbrbpina.supabase.co/functions/v1/realtime-voice';
-      console.log('Connecting to:', wsUrl);
+      // Connect to WebSocket relay with preferred voice
+      const wsUrl = `wss://eutknxcaiepkkbrbpina.supabase.co/functions/v1/realtime-voice?voice=${preferredVoice}`;
+      console.log('Connecting to:', wsUrl, 'with voice:', preferredVoice);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -241,6 +272,7 @@ export const useVoiceChat = () => {
     isRecording,
     isSpeaking,
     error,
+    preferredVoice,
     connect,
     disconnect,
     sendTextMessage
