@@ -18,7 +18,10 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  console.log("WebSocket upgrade request received");
+  // Get preferred voice from query params
+  const url = new URL(req.url);
+  const preferredVoice = url.searchParams.get('voice') || 'alloy';
+  console.log("WebSocket upgrade request received with voice:", preferredVoice);
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   
@@ -79,7 +82,7 @@ Importante:
 - SEMPRE recomende consultar um profissional de saúde para questões médicas específicas
 - Seja natural e conversacional no modo de voz
 - Use uma linguagem simples e acessível`,
-              voice: 'alloy',
+              voice: preferredVoice,
               input_audio_format: 'pcm16',
               output_audio_format: 'pcm16',
               input_audio_transcription: {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { VoiceSelector } from "@/components/VoiceSelector";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -800,6 +801,13 @@ const Perfil = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Voice Selector - Only for Premium users */}
+            {subscription && subscription.plan_type === 'premium' && user && (
+              <div className="md:col-span-2">
+                <VoiceSelector userId={user.id} currentVoice={profile?.preferred_voice} />
+              </div>
+            )}
 
             {/* Card de Ações da Conta - Redesenhado (Ocupa toda largura) */}
             <Card className="md:col-span-2 relative overflow-hidden border-2 hover:border-primary/30 transition-all">
