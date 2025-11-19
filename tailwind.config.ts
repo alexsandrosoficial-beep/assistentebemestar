@@ -110,6 +110,10 @@ export default {
           "0%, 100%": { opacity: "1", filter: "brightness(1)" },
           "50%": { opacity: "0.8", filter: "brightness(1.2)" },
         },
+        "sound-wave": {
+          "0%, 100%": { height: "8px" },
+          "50%": { height: "48px" },
+        },
         "float": {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
@@ -125,6 +129,7 @@ export default {
         "slide-in-left": "slide-in-left 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "sound-wave": "sound-wave 0.8s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
       },
     },
