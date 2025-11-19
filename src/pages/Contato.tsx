@@ -2,6 +2,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, MessageCircle } from "lucide-react";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import { getWhatsAppMessage } from "@/utils/whatsappMessages";
 
 const Contato = () => {
 
@@ -60,6 +62,26 @@ const Contato = () => {
                   </a>
                   <p className="text-sm text-muted-foreground mt-2">
                     Atendimento via WhatsApp
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="max-w-2xl mx-auto mt-8">
+              <Card className="border-2 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+                <CardContent className="pt-6 text-center">
+                  <h3 className="text-xl font-semibold mb-4">
+                    Precisa de Ajuda Rápida?
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Fale diretamente conosco via WhatsApp e receba suporte imediato
+                  </p>
+                  <WhatsAppButton 
+                    message={getWhatsAppMessage("default")}
+                    size="lg"
+                  />
+                  <p className="text-xs text-muted-foreground mt-4">
+                    ✅ Resposta rápida • ✅ Suporte humanizado • ✅ Horário comercial
                   </p>
                 </CardContent>
               </Card>
